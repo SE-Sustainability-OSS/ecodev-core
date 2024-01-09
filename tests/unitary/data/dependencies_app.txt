@@ -1,0 +1,8 @@
+module x depends on,core,db,insertors,nlp,pages,retrievers,routers
+core,Yes,No,No,No,No,No,No
+db,Yes,Yes,No,No,No,No,No
+insertors,Yes,Yes,Yes,No,No,No,No
+nlp,Yes,No,No,Yes,No,No,No
+pages,Yes,Yes,No,No,No,No,No
+retrievers,Yes,Yes,No,Yes,No,Yes,No
+routers,Yes,Yes,Yes,No,No,Yes,Yes

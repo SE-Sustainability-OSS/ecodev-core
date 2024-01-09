@@ -1,0 +1,20 @@
+[
+    {
+        "permission": "Admin",
+        "password": "$2b$12$jjxyNRPzaATwEch.5BLRCuufnLX11jU74YsKgrMeTWZeiEl7byYdi",
+        "user": "admin",
+        "client": null
+    },
+    {
+        "permission": "Client",
+        "password": "$2b$12$RmZ6j7aChsLS6p4J5ijGo.yuiundsd6RcUKh0V4Z3FqQjZgs8X/Xu",
+        "user": "client",
+        "client": null
+    },
+    {
+        "permission": "Client",
+        "password": "$2b$12$hSH84a4Vk8h9K2zfG58AY.4ofD9SeROfmy5zByT1LpkwSA.QLNGwq",
+        "user": "monitoring",
+        "client": null
+    }
+]
