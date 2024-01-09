@@ -28,7 +28,7 @@ COPY --from=builder /app/wheels /wheels
 RUN python3 -m pip install --no-cache /wheels/*
 
 ## Ship code
-COPY core_devoops/ /app/core_devoops
+COPY ecodev_core/ /app/ecodev_core
 WORKDIR /app
 
 #Opened ports
