@@ -46,11 +46,12 @@ fastapi = "~0"
 pandas = "~2"
 sqlmodel = "~0"
 numpy = "~1"
-pydantic = {version = "~1", extras = ["python-dotenv"]}
+pydantic = {version = "~2", extras = ["python-dotenv"]}
 python-jose = {version = "~3", extras = ["cryptography"]}
 passlib = {version = "~1", extras = ["bcyrypt"]}
 sqladmin = "0.15.2"
 httpx = "~0"
+
 
 [build-system]
 requires = ["poetry-core"]
