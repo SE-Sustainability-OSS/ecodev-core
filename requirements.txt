@@ -1,0 +1,9 @@
+fastapi==0.*
+pandas==2.*
+passlib[bcrypt]==1.*
+psycopg2[binary]==2.*
+pydantic[python-dotenv]==1.*
+python-jose[cryptography]==3.*
+python-multipart==0.*
+sqlmodel==0.*
+sqladmin==0.9.0

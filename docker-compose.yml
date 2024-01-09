@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+# BEGIN ecodev_core
+  ecodev_core:
+    image: ecodev_core:latest
+    restart: always
+    container_name: ecodev_core
+    command: jupyter notebook --no-browser --ip 0.0.0.0 --allow-root --port 80 --NotebookApp.token='${jupyter_token}'
+    environment:
+      TZ: Europe/Paris
+    volumes:
+      - ./ecodev_core:/app/ecodev_core
+      - ./data:/app/data
+    depends_on:
+      - ecodev_core_db
+    env_file:
+      - ./.env
+    networks:
+      - ecodev-network
+# END ecodev_core
+# BEGIN ecodev_core_db
+  ecodev_core_db:
+    image: postgres:14.2-alpine
+    restart: always
+    container_name: ecodev_core_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./db_data/:/var/lib/postgresql/data/
+    env_file:
+      - ./.env
+    networks:
+      - ecodev-network
+# END ecodev_core_db
+
+networks:
+  ecodev-network:
+   name: ecodev-network

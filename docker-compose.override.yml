@@ -1,0 +1,7 @@
+services:
+
+  ecodev_core:
+    ports:
+      - ${app_port:-8000}:80
+    volumes:
+       - ./tests:/app/tests

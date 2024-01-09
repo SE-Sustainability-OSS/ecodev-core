@@ -1,0 +1,103 @@
+name: pipeline
+
+on:
+  push:
+    paths-ignore:
+      - 'badges/**'
+
+jobs:
+  test:
+    name: code quality
+    runs-on: ubuntu-latest
+    env:
+      GITHUB-ACTION: true
+    services:
+      postgres:
+        image: postgres:14.2-alpine
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          -e POSTGRES_PASSWORD=postgres
+          -e POSTGRES_DB=postgres
+          -e POSTGRES_USER=postgres
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build the Docker image
+        run: |
+          docker build . --file Dockerfile-dev --tag ecodev_core:latest
+
+      - name: Test with UnitTest
+        uses: addnab/docker-run-action@v3
+        env:
+          POSTGRES_HOST: postgres
+        with:
+          image: ecodev_core:latest
+          options:
+            -e algorithm=HS256
+            -e access_token_expire_minutes=1440
+            -e db_username=postgres
+            -e db_password=postgres
+            -e app_username=postgres
+            -e app_password=postgres
+            -e db_host=postgres
+            -e db_name=postgres
+            -e db_port=${{ job.services.postgres.ports[5432] }}
+            -e secret_key=totototototototototototototototototototo
+            -e app_port=8000
+            -v ${{github.workspace}}/tests:/app/tests
+            -v ${{github.workspace}}/ecodev_core:/app/app
+            -v ${{github.workspace}}:/app/
+            -v ${{github.workspace}}/.coveragerc:/app/.coveragerc
+          run: |
+            python3 -m pip install coverage anybadge
+            coverage run -m unittest discover
+            coverage html
+            coverage report -m  --fail-under=60 --precision=2 > coverage.log
+            cat coverage.log
+            COVERAGE_SCORE=$(sed -n 's/^\(TOTAL\s*[0-9]*\s*[0-9]*\s*\)//p' coverage.log)
+            anybadge --label=coverage --value=$COVERAGE_SCORE --file=coverage.svg 50=red 60=orange 80=yellow 100=green
+            echo "Coverage score is $COVERAGE_SCORE"
+            mv coverage.svg ./badges/
+
+      - name: Analysing the code with pylint
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ecodev_core:latest
+          options:
+            -v ${{github.workspace}}/ecodev_core:/app/app
+            -v ${{github.workspace}}:/app/
+          run: |
+            python3 -m pip install pylint anybadge
+            find app/ -type f -name "*.py" | xargs python3 -m pylint --exit-zero --output-format=text | tee pylint.log
+            PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.log)
+            anybadge -l pylint -f pylint.svg -v $PYLINT_SCORE --prefix=' ' --suffix='/10 ' 2=red 4=orange 8=yellow 10=green
+            echo "Pylint score is $PYLINT_SCORE"
+            mv pylint.svg ./badges/
+
+      - name: Commit badge files
+        if: ${{ github.ref }} != main
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          date > badges/date.log
+          git add badges/coverage.svg
+          git add badges/pylint.svg
+          git add badges/date.log
+          git commit -m "Add badges" -n
+
+      - name: Push badge files
+        if: ${{ github.ref }} != main
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: ${{github.workspace}}/htmlcov
