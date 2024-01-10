@@ -1,7 +1,8 @@
 """
 Module implementing authentication configuration.
 """
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
+from pydantic_settings import SettingsConfigDict
 
 
 class AuthenticationConfiguration(BaseSettings):
@@ -11,12 +12,7 @@ class AuthenticationConfiguration(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
-
-    class Config:
-        """
-        Config class specifying the name of the environment file to read
-        """
-        env_file = '.env'
+    model_config = SettingsConfigDict(env_file='.env')
 
 
 AUTH = AuthenticationConfiguration()

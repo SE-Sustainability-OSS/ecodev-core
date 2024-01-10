@@ -11,6 +11,7 @@ from typing import Tuple
 from typing import Union
 
 import pandas as pd
+from sqlalchemy import func
 from sqlmodel import col
 from sqlmodel import or_
 from sqlmodel import select
@@ -41,7 +42,7 @@ class ServerSideField(Frozen):
     """
     col_name: str
     field_name: str
-    field: Any
+    field: Any = None
     filter: ServerSideFilter
 
 
@@ -56,8 +57,8 @@ def count_rows(fields: List[ServerSideField],
     dynamically set frontend filters. Divide this total number by limit to account for pagination.
     """
     with Session(engine) as session:
-        count = _get_full_query(fields, model, filter_str, session, True,
-                                search_str, search_cols).count()
+        count = session.exec(_get_full_query(fields, model, filter_str, True, search_str,
+                                             search_cols)).one()
 
         return ceil(count / limit) if limit else count
 
@@ -83,7 +84,7 @@ def get_rows(fields: List[ServerSideField],
     with Session(engine) as session:
         rows = _paginate_db_lines(fields, model, session, limit, offset, filter_str,
                                   search_str, search_cols, fields_order)
-    if len(raw_df := pd.DataFrame.from_records([row.dict() for row in rows])) > 0:
+    if len(raw_df := pd.DataFrame.from_records([row.model_dump() for row in rows])) > 0:
         return raw_df.rename(columns={field.field_name: field.col_name for field in fields}
                              )[[field.col_name for field in fields]]
     return pd.DataFrame(columns=[field.col_name for field in fields])
@@ -105,7 +106,7 @@ def _paginate_db_lines(fields: List[ServerSideField],
     if fields_order is None:
         fields_order = _get_default_field_order(fields)
 
-    query = fields_order(_get_full_query(fields, model, filter_str, session, count=False,
+    query = fields_order(_get_full_query(fields, model, filter_str, count=False,
                                          search_str=search_str, search_cols=search_cols))
     if limit is not None and offset is not None:
         return list(session.exec(query.offset(offset * limit).limit(limit)))
@@ -115,7 +116,6 @@ def _paginate_db_lines(fields: List[ServerSideField],
 def _get_full_query(fields: List[ServerSideField],
                     model: Any,
                     filter_str: str,
-                    session: Session,
                     count: bool = False,
                     search_str: str = '',
                     search_cols: Optional[List] = None
@@ -128,8 +128,7 @@ def _get_full_query(fields: List[ServerSideField],
     * The field_filters are used jointly with the dynamically set frontend filters.
 
     """
-    filter_query = _get_filter_query(fields, model, _get_frontend_filters(filter_str), session,
-                                     count)
+    filter_query = _get_filter_query(fields, model, _get_frontend_filters(filter_str), count)
 
     if not search_str or not search_cols:
         return filter_query
@@ -157,7 +156,6 @@ def _forge_filter(elt: str) -> Tuple[str, str]:
 def _get_filter_query(fields: List[ServerSideField],
                       model: Any,
                       frontend_filters: Dict[str, Tuple[str, str]],
-                      session: Session,
                       count: bool = False
                       ) -> SelectOfScalar:
     """
@@ -167,7 +165,7 @@ def _get_filter_query(fields: List[ServerSideField],
         * either the query fetching the filtered rows (count = False)
         * or the filter row count.
     """
-    query = session.query(model) if count else select(model)
+    query = select(func.count(model.id)) if count else select(model)
     if not frontend_filters or not all(frontend_filters.keys()):
         return query
 
