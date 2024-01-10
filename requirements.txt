@@ -1,9 +1,12 @@
 fastapi==0.*
+httpx==0.*
+itsdangerous==2.*
 pandas==2.*
 passlib[bcrypt]==1.*
 psycopg2[binary]==2.*
-pydantic[python-dotenv]==1.*
+pydantic[python-dotenv]==2.*
+pydantic-settings==2.*
 python-jose[cryptography]==3.*
 python-multipart==0.*
 sqlmodel==0.*
-sqladmin==0.9.0
+sqladmin==0.15.2

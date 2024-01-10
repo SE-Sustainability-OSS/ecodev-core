@@ -3,13 +3,15 @@ Module implementing postgresql connection
 """
 from typing import Callable
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
+from pydantic_settings import SettingsConfigDict
 from sqlalchemy import delete
 from sqlmodel import create_engine
 from sqlmodel import Session
 from sqlmodel import SQLModel
 
 from ecodev_core.logger import logger_get
+
 log = logger_get(__name__)
 
 
@@ -22,12 +24,7 @@ class DbSettings(BaseSettings):
     db_name: str
     db_username: str
     db_password: str
-
-    class Config:
-        """
-        Config class specifying the name of the environment file to read
-        """
-        env_file = '.env'
+    model_config = SettingsConfigDict(env_file='.env')
 
 
 DB = DbSettings()
