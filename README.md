@@ -23,3 +23,7 @@ Starting from a project with a Docker file:
 * make sure the `.env` file includes all required fields (see `BaseSettings` and `AuthenticationConfiguration`)
 * build the new version of the Docker container (typically `docker build --tag xxx .`)
 * run it with docker compose (`dc up -d`).
+
+## Documentation
+
+Please find it in the [associated mkdoc website!](https://ecodev-doc.lcabox.com/)
