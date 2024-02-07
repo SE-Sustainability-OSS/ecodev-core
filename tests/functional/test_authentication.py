@@ -33,6 +33,7 @@ from ecodev_core.authentication import is_admin_user
 from ecodev_core.authentication import is_authorized_user
 from ecodev_core.authentication import JwtAuth
 from ecodev_core.authentication import MONITORING_ERROR
+from ecodev_core.authentication import safe_get_user
 
 
 DATA_DIR = Path('/app/tests/unitary/data')
@@ -156,6 +157,19 @@ class AuthenticationTest(SafeTestCase):
         client = get_current_user(client_token)
         self.assertEqual(client.user, 'client')
         self.assertTrue(isinstance(client, AppUser))
+
+    def test_safe_get_user(self):
+        """
+        Test that safe user retrieval works as expected
+        """
+        with Session(engine) as session:
+            token = {'token': attempt_to_log('client', 'client', session)}
+        client = safe_get_user(token)
+        self.assertEqual(client.user, 'client')
+        self.assertTrue(isinstance(client, AppUser))
+
+        wrong = safe_get_user({'token': 'toto'})
+        self.assertTrue(wrong is None)
 
     def test_admin_auth(self):
         """

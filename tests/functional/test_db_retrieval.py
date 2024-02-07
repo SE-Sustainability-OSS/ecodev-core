@@ -19,7 +19,7 @@ from ecodev_core import upsert_app_users
 
 
 DATA_DIR = Path('/app/tests/unitary/data')
-APP_FILTER = ServerSideField(col_name='user', field_name='field_name', field=AppUser.user,
+APP_FILTER = ServerSideField(col_name='user', field_name='user', field=AppUser.user,
                              filter=ServerSideFilter.ILIKESTR)
 
 

@@ -20,6 +20,7 @@ from ecodev_core.authentication import is_admin_user
 from ecodev_core.authentication import is_authorized_user
 from ecodev_core.authentication import is_monitoring_user
 from ecodev_core.authentication import JwtAuth
+from ecodev_core.authentication import safe_get_user
 from ecodev_core.authentication import SCHEME
 from ecodev_core.authentication import Token
 from ecodev_core.check_dependencies import check_dependencies
@@ -75,5 +76,4 @@ __all__ = [
     'enum_converter', 'ServerSideFilter', 'get_rows', 'count_rows', 'ServerSideField', 'get_raw_df',
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
-    'get_access_token'
-]
+    'get_access_token', 'safe_get_user']
