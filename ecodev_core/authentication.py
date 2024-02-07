@@ -148,6 +148,16 @@ def is_authorized_user(token: str = Depends(SCHEME)) -> bool:
         return False
 
 
+def safe_get_user(token: Dict) -> Union[AppUser, None]:
+    """
+    Safe method returning a user if one found given the passed token
+    """
+    try:
+        return get_user(get_access_token(token))
+    except (HTTPException, AttributeError):
+        return None
+
+
 def get_user(token: str = Depends(SCHEME)) -> AppUser:
     """
     Retrieves (if it exists) the db user corresponding to the passed token

@@ -37,7 +37,7 @@ class Insertor(CustomFrozen):
         - selector: the criteria on which to decide whether to create or update (example: only add
           a user if a user with the same name is not already present in the db)
         - convertor: how to convert the raw csv/excel passed by the user to json like db rows
-        - whether to insert data based on an xlsx (if true) or a csv (if false)
+        - read_excel_file: whether to insert data based on an xlsx (if true) or a csv (if false)
     """
     reductor: Callable[[Any, Any], Any]
     db_schema: Callable
