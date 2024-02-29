@@ -23,6 +23,7 @@ from ecodev_core.authentication import JwtAuth
 from ecodev_core.authentication import safe_get_user
 from ecodev_core.authentication import SCHEME
 from ecodev_core.authentication import Token
+from ecodev_core.backup import backup
 from ecodev_core.check_dependencies import check_dependencies
 from ecodev_core.check_dependencies import compute_dependencies
 from ecodev_core.custom_equal import custom_equal
@@ -64,7 +65,6 @@ from ecodev_core.safe_utils import SafeTestCase
 from ecodev_core.safe_utils import SimpleReturn
 from ecodev_core.safe_utils import stringify
 
-
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
     'write_json_file', 'load_json_file', 'make_dir', 'check_dependencies', 'compute_dependencies',
@@ -76,4 +76,4 @@ __all__ = [
     'enum_converter', 'ServerSideFilter', 'get_rows', 'count_rows', 'ServerSideField', 'get_raw_df',
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
-    'get_access_token', 'safe_get_user']
+    'get_access_token', 'safe_get_user', 'backup']

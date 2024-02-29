@@ -2,6 +2,7 @@
 Module implementing postgresql connection
 """
 from typing import Callable
+from urllib.parse import quote
 
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
@@ -28,7 +29,8 @@ class DbSettings(BaseSettings):
 
 
 DB = DbSettings()
-DB_URL = f'postgresql://{DB.db_username}:{DB.db_password}@{DB.db_host}:{DB.db_port}/{DB.db_name}'
+_PASSWORD = quote(DB.db_password, safe='')
+DB_URL = f'postgresql://{DB.db_username}:{_PASSWORD}@{DB.db_host}:{DB.db_port}/{DB.db_name}'
 engine = create_engine(DB_URL)
 
 
