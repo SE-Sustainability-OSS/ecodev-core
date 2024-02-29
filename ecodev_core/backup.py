@@ -39,8 +39,8 @@ def backup(backed_folder: Path, nb_saves: int = 5) -> None:
     Backup db and backed_folder: write the dump/tar on the backup server and erase old copies
     """
     timestamp = datetime.now().strftime('%Y_%m_%d_%Hh_%Mmn_%Ss')
-    _backup_db(Path.cwd() / f'db_{timestamp}.dump', nb_saves)
-    _backup_files(backed_folder, Path.cwd() / f'files_{timestamp}.tgz', nb_saves)
+    _backup_db(Path.cwd() / f'db.{timestamp}.dump', nb_saves)
+    _backup_files(backed_folder, Path.cwd() / f'files.{timestamp}.tgz', nb_saves)
 
 
 def _backup_db(db_dump_path: Path, nb_saves: int) -> None:
