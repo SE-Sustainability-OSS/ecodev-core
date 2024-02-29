@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ecodev-core"
-version = "0.0.5"
+version = "0.0.7"
 description = "Low level sqlmodel/fastapi/pydantic building blocks"
 authors = ["Thomas Epelbaum <tomepel@gmail.com>",
 					 "Olivier Gabriel <olivier.gabriel.geom@gmail.com>",
@@ -52,7 +52,7 @@ passlib = {version = "~1", extras = ["bcyrypt"]}
 sqladmin = "0.15.2"
 httpx = "~0"
 pydantic-settings = "~2"
-psycopg2 = {version = "~2", extras = ["binary"]}
+psycopg2-binary = "~2"
 
 
 [build-system]
