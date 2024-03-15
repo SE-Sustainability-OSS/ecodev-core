@@ -1,0 +1,13 @@
+start_zip_code,start_address,start_city,start_country,start_code,start_code_type,start_latitude,start_longitude,end_zip_code,end_address,end_city,end_country,end_code,end_code_type,end_latitude,end_longitude,full_trip_id,section_id,connected_section_id,mode,emission_factor,carried_weight,distance,tons_km,co2_tons
+75005.0,,,FR,,,,,10001.0,,New York,US,,,,,0,0,,sea,,,,,
+75005.0,,,FR,,,,,10001.0,,New York,US,,,,,1,0,,road,,,,,
+75005.0,,,FR,,,,,10001.0,,New York,US,,,,,2,0,,,,,,,
+75005.0,,,FR,,,,,69009.0,,,FR,,,,,3,0,,road,,,,,
+75005.0,,,FR,,,,,,,Strasburg,FR,,,,,3,1,,,,,,,
+,,,FR,ACO,unlocode,,,,,,FR,LDV,iata,,,4,0,,air,,,,,
+75005.0,,,FR,,,,,,,,FR,LDV,iata,,,5,0,,air,,,,,
+,,,FR,ACO,unlocode,,,,,New York,US,,,,,6,0,,air,,,,,
+,12 rue des plantes en pot,,FR,,,,,,,Strasburg,FR,,,,,7,0,,air,,,,,
+75005.0,,,FR,,,,,10001.0,,New York,US,,,,,8,0,,sea,,,,,
+75005.0,,,FRR,,,,,10001.0,,New York,US,,,,,9,0,,sea,,,,,
+75005.0,"35 rue de Miromesnil, Paris",Paris,FR,,,,,,"23 Rue Yves Toudic, Paris",Paris,FR,,,,,10,0,,road,,,,,

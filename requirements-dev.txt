@@ -1,6 +1,7 @@
 fastapi==0.*
 httpx==0.*
 itsdangerous==2.*
+openpyxl==3.*
 notebook==6.*
 pandas==2.*
 passlib[bcrypt]==1.*

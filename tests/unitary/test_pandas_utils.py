@@ -6,7 +6,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ecodev_core import load_json_file
 from ecodev_core import SafeTestCase
+from ecodev_core.pandas_utils import get_excelfile
 from ecodev_core.pandas_utils import jsonify_series
 from ecodev_core.pandas_utils import pd_equals
 
@@ -32,3 +34,11 @@ class ReadWriteTest(SafeTestCase):
         """
         df = pd.DataFrame.from_dict({'a': [1, 2], 'b': [np.nan, 2]})
         self.assertDictEqual(jsonify_series(df['b']), {0: None, 1: 2.0})
+
+    def test_get_excelfile(self):
+        """
+        Test get_excelfile utils method
+        """
+        xl = get_excelfile(load_json_file(TEST_FILE.parent / 'str_parsing.json')['data'])
+        gt_df = pd.read_csv(TEST_FILE.parent / 'gt_str_parsing.csv')
+        self.assertTrue(gt_df.equals(xl.parse('input')))

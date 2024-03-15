@@ -2,6 +2,7 @@
 Module implementing some utilitary methods on pandas types
 """
 import tempfile
+from base64 import b64decode
 from pathlib import Path
 from typing import Dict
 
@@ -28,3 +29,12 @@ def jsonify_series(row: pd.Series) -> Dict:
     """
     return {key: None if isinstance(value, float) and np.isnan(value) else value for key, value in
             row.to_dict().items()}
+
+
+def get_excelfile(contents: str) -> pd.ExcelFile:
+    """
+    Function which converts user xlsx file upload into a pd.ExcelFile
+    """
+    content_type, content_string = contents.split(',')
+    xl = b64decode(content_string)
+    return pd.ExcelFile(xl)

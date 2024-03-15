@@ -42,11 +42,13 @@ from ecodev_core.db_retrieval import ServerSideField
 from ecodev_core.enum_utils import enum_converter
 from ecodev_core.list_utils import first_or_default
 from ecodev_core.list_utils import first_transformed_or_default
+from ecodev_core.list_utils import group_by
 from ecodev_core.list_utils import group_by_value
 from ecodev_core.list_utils import lselect
 from ecodev_core.list_utils import lselectfirst
 from ecodev_core.logger import log_critical
 from ecodev_core.logger import logger_get
+from ecodev_core.pandas_utils import get_excelfile
 from ecodev_core.pandas_utils import jsonify_series
 from ecodev_core.pandas_utils import pd_equals
 from ecodev_core.permissions import Permission
@@ -76,4 +78,4 @@ __all__ = [
     'enum_converter', 'ServerSideFilter', 'get_rows', 'count_rows', 'ServerSideField', 'get_raw_df',
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
-    'get_access_token', 'safe_get_user', 'backup']
+    'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile']

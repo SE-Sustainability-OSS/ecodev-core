@@ -2,11 +2,14 @@
 Module implementing helper methods working on lists
 """
 from collections import defaultdict
+from itertools import groupby
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 
@@ -40,6 +43,19 @@ def first_or_default(sequence: Union[List[Any], None],
     if condition is None:
         return next(iter(sequence), default)
     return next((elt for elt in sequence if condition(elt)), default)
+
+
+def group_by(sequence: List[Any], key: Union[Callable, None]) -> Iterator[Tuple[Any, List[Any]]]:
+    """
+    Extension of itertools groupby method.
+
+    Reasons of existence:
+        - do the sorting before the grouping to avoid the usual mistake of forgetting the sorting
+        - convert the group Iterator to a list. More convenient that the default groupby behaviour
+           in all cases where you need to iterate more than once on the group
+    """
+    for key, group in groupby(sorted(sequence, key=key), key=key):
+        yield key, list(group)
 
 
 def lselect(sequence: List[Any], condition: Union[Callable, None] = None) -> List[Any]:
