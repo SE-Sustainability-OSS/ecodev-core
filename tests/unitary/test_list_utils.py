@@ -7,6 +7,7 @@ from ecodev_core import group_by_value
 from ecodev_core import lselect
 from ecodev_core import lselectfirst
 from ecodev_core import SafeTestCase
+from ecodev_core.list_utils import group_by
 
 
 class ListUtilsTest(SafeTestCase):
@@ -29,6 +30,16 @@ class ListUtilsTest(SafeTestCase):
         """
         data = [1, 2, 3, 1, 1, 2, 3]
         self.assertEqual(group_by_value(data), {1: [0, 3, 4], 2: [1, 5], 3: [2, 6]})
+
+    def test_group_by(self):
+        """
+        Test custom group_by method
+        """
+        data = [1, 2, 3, 1, 1, 2, 3]
+        for key, group in group_by(data, None):
+            if key == 1:
+                for _ in range(3):
+                    self.assertCountEqual(group, [1, 1, 1])
 
     def test_lselect(self):
         """
