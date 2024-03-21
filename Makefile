@@ -23,7 +23,7 @@ HELP_DESCRIPTION = \
 help:		## Show this help.
 	@perl -e '$(HELP_DESCRIPTION)' $(MAKEFILE_LIST)
 
-jupyter:            ##@docker Launch a jupyter notebook from a fresh container
+launch-jupyter:            ##@docker Launch a jupyter notebook from a fresh container
 	docker exec ecodev_core  jupyter notebook --no-browser --ip 0.0.0.0 --allow-root --port 5000
 
 build:           ##@docker Build a new prod docker image
