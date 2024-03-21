@@ -238,7 +238,7 @@ def _verify_access_token(token: str,
     """
     try:
         payload = jwt.decode(token, AUTH.secret_key, algorithms=[AUTH.algorithm])
-        if tfa_check and not _check_password(tfa_value, payload.get('tfa')):
+        if tfa_check and (not tfa_value or not _check_password(tfa_value, payload.get('tfa'))):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_TFA,
                                 headers={'WWW-Authenticate': 'Bearer'})
         if (user_id := payload.get('user_id')) is None:
