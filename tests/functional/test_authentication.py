@@ -22,18 +22,22 @@ from ecodev_core import is_monitoring_user
 from ecodev_core import SafeTestCase
 from ecodev_core import select_user
 from ecodev_core import upsert_app_users
+from ecodev_core.authentication import _create_access_token
 from ecodev_core.authentication import _hash_password
+from ecodev_core.authentication import _verify_access_token
 from ecodev_core.authentication import ADMIN_ERROR
 from ecodev_core.authentication import get_app_services
 from ecodev_core.authentication import get_current_user
 from ecodev_core.authentication import get_user
 from ecodev_core.authentication import INVALID_CREDENTIALS
+from ecodev_core.authentication import INVALID_TFA
 from ecodev_core.authentication import INVALID_USER
 from ecodev_core.authentication import is_admin_user
 from ecodev_core.authentication import is_authorized_user
 from ecodev_core.authentication import JwtAuth
 from ecodev_core.authentication import MONITORING_ERROR
 from ecodev_core.authentication import safe_get_user
+from ecodev_core.authentication import TokenData
 
 
 DATA_DIR = Path('/app/tests/unitary/data')
@@ -158,6 +162,12 @@ class AuthenticationTest(SafeTestCase):
         self.assertEqual(client.user, 'client')
         self.assertTrue(isinstance(client, AppUser))
 
+        try:
+            wrong_tfa = get_current_user(client_token, '123456')
+        except HTTPException as e:
+            wrong_tfa = e.detail
+        self.assertEqual(wrong_tfa, INVALID_TFA)
+
     def test_safe_get_user(self):
         """
         Test that safe user retrieval works as expected
@@ -170,6 +180,19 @@ class AuthenticationTest(SafeTestCase):
 
         wrong = safe_get_user({'token': 'toto'})
         self.assertTrue(wrong is None)
+
+    def test_jwt_encode_decode(self):
+        """
+        Test jwd encoding and decoding mechanism
+        """
+        token = _create_access_token({'user_id': 1}, tfa_value='123456')
+        self.assertTrue(_verify_access_token(token, '123456') == TokenData(id=1))
+
+        try:
+            wrong_tfa = _verify_access_token(token, '123455')
+        except HTTPException as e:
+            wrong_tfa = e.detail
+        self.assertEqual(wrong_tfa, INVALID_TFA)
 
     def test_admin_auth(self):
         """
