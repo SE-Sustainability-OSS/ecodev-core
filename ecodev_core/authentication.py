@@ -145,54 +145,64 @@ def attempt_to_log(user: str,
         log.warning('invalid user')
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=INVALID_CREDENTIALS)
 
-    return {'access_token': _create_access_token(data={'user_id': db_user.id, 'tfa': tfa_value}),
+    return {'access_token': _create_access_token(data={'user_id': db_user.id}, tfa_value=tfa_value),
             'token_type': 'bearer'}
 
 
-def is_authorized_user(token: str = Depends(SCHEME),  tfa_value: Optional[str] = None) -> bool:
+def is_authorized_user(token: str = Depends(SCHEME),
+                       tfa_value: Optional[str] = None,
+                       tfa_check: bool = False) -> bool:
     """
     Check if the passed token corresponds to an authorized user
     """
     try:
-        return get_current_user(token, tfa_value) is not None
+        return get_current_user(token, tfa_value, tfa_check) is not None
     except Exception:
         return False
 
 
-def safe_get_user(token: Dict, tfa: bool = False) -> Union[AppUser, None]:
+def safe_get_user(token: Dict, tfa_check: bool = False) -> Union[AppUser, None]:
     """
     Safe method returning a user if one found given the passed token
     """
     try:
-        return get_user(get_access_token(token), token['tfa'] if tfa else None)
+        return get_user(get_access_token(token), token['tfa'] if tfa_check else None, tfa_check)
     except (HTTPException, AttributeError):
         return None
 
 
-def get_user(token: str = Depends(SCHEME), tfa_value: Optional[str] = None) -> AppUser:
+def get_user(token: str = Depends(SCHEME),
+             tfa_value: Optional[str] = None,
+             tfa_check: bool = False) -> AppUser:
     """
     Retrieves (if it exists) the db user corresponding to the passed token
     """
-    if user := get_current_user(token, tfa_value):
+    if user := get_current_user(token, tfa_value, tfa_check):
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS,
                         headers={'WWW-Authenticate': 'Bearer'})
 
 
-def get_current_user(token: str, tfa_value: Optional[str] = None) -> Union[AppUser, None]:
+def get_current_user(token: str,
+                     tfa_value: Optional[str] = None,
+                     tfa_check: bool = False
+                     ) -> Union[AppUser, None]:
     """
     Retrieves (if it exists) a valid (meaning who has valid credentials) user from the db
     """
-    token = _verify_access_token(token, tfa_value)
+    token = _verify_access_token(token, tfa_value, tfa_check)
     with Session(engine) as session:
         return session.exec(select(AppUser).where(col(AppUser.id) == token.id)).first()
 
 
-def is_admin_user(token: str = Depends(SCHEME), tfa_value: Optional[str] = None) -> AppUser:
+def is_admin_user(token: str = Depends(SCHEME),
+                  tfa_value: Optional[str] = None,
+                  tfa_check: bool = False) -> AppUser:
     """
     Retrieves (if it exists) the admin (meaning who has valid credentials) user from the db
     """
-    if (user := get_current_user(token, tfa_value)) and user.permission == Permission.ADMIN:
+    if (user := get_current_user(
+            token, tfa_value, tfa_check)) and user.permission == Permission.ADMIN:
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ADMIN_ERROR,
                         headers={'WWW-Authenticate': 'Bearer'})
@@ -220,13 +230,15 @@ def _create_access_token(data: Dict, tfa_value: Optional[str] = None) -> str:
     return jwt.encode(to_encode, AUTH.secret_key, algorithm=AUTH.algorithm)
 
 
-def _verify_access_token(token: str, tfa_value: Optional[str] = None) -> TokenData:
+def _verify_access_token(token: str,
+                         tfa_value: Optional[str] = None,
+                         tfa_check: bool = False) -> TokenData:
     """
     Retrieves the token data associated to the passed token if it contains valid credential info.
     """
     try:
         payload = jwt.decode(token, AUTH.secret_key, algorithms=[AUTH.algorithm])
-        if tfa_value and not _check_password(tfa_value, payload.get('tfa')):
+        if tfa_check and not _check_password(tfa_value, payload.get('tfa')):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_TFA,
                                 headers={'WWW-Authenticate': 'Bearer'})
         if (user_id := payload.get('user_id')) is None:
@@ -245,7 +257,7 @@ def _hash_password(password: str) -> str:
     return CONTEXT.hash(password)
 
 
-def _check_password(plain_password: str, hashed_password: str) -> bool:
+def _check_password(plain_password: Optional[str], hashed_password: str) -> bool:
     """
     Check the passed password (compare it to the passed encoded one).
     """
