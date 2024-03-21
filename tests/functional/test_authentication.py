@@ -163,7 +163,7 @@ class AuthenticationTest(SafeTestCase):
         self.assertTrue(isinstance(client, AppUser))
 
         try:
-            wrong_tfa = get_current_user(client_token, '123456')
+            wrong_tfa = get_current_user(client_token, '123456', tfa_check=True)
         except HTTPException as e:
             wrong_tfa = e.detail
         self.assertEqual(wrong_tfa, INVALID_TFA)
@@ -186,10 +186,11 @@ class AuthenticationTest(SafeTestCase):
         Test jwd encoding and decoding mechanism
         """
         token = _create_access_token({'user_id': 1}, tfa_value='123456')
-        self.assertTrue(_verify_access_token(token, '123456') == TokenData(id=1))
+        self.assertTrue(_verify_access_token(token, '123456', tfa_check=True
+                                             ) == TokenData(id=1))
 
         try:
-            wrong_tfa = _verify_access_token(token, '123455')
+            wrong_tfa = _verify_access_token(token, '123455', tfa_check=True)
         except HTTPException as e:
             wrong_tfa = e.detail
         self.assertEqual(wrong_tfa, INVALID_TFA)
