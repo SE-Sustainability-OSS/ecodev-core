@@ -4,6 +4,7 @@ This boilerplate code is not to be touched under any circumstances.
 """
 import contextlib
 import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -168,6 +169,13 @@ def floatify(x: Union[str, float]) -> Union[float, None]:
     Safe conversion of a (float, np.nan) value into a (float,None) one
     """
     return _transformify(x, float)
+
+
+def datify(date: str, date_format: str) -> Union[datetime, None]:
+    """
+    Safe conversion to a date format
+    """
+    return _transformify(date, lambda x: datetime.strptime(x, date_format))
 
 
 def _transformify(x: Union[Any, float], transformation: Callable) -> Union[Any, None]:

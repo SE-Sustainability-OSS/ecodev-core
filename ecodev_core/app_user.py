@@ -2,7 +2,7 @@
 Module implementing the sqlmodel orm part of the user table
 """
 from pathlib import Path
-from typing import Dict
+from typing import Any
 from typing import List
 from typing import Optional
 from typing import TYPE_CHECKING
@@ -39,7 +39,7 @@ class AppUser(SQLModel, table=True):  # type: ignore
     rights: List['AppRight'] = Relationship(back_populates='user')
 
 
-def user_convertor(df: pd.DataFrame) -> List[Dict]:
+def user_convertor(df: pd.DataFrame) -> List[Any]:
     """
     Dummy user convertor
     """

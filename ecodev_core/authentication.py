@@ -93,19 +93,22 @@ class JwtAuth(AuthenticationBackend):
             request.session.update(token)
         return True if token else False
 
-    @staticmethod
-    def authorized(form: Any):
+    def authorized(self, form: Any):
         """
         Check that the user information contained in the form corresponds to an admin user
         """
         with Session(engine) as session:
             try:
-                token = attempt_to_log(form.get('username', ''), form.get('password', ''), session)
-                if is_admin_user(token['access_token']):
-                    return token
-                return None
+                return self.admin_token(form, session)
             except HTTPException:
                 return None
+
+    def admin_token(self, form: Any, session: Session) -> Union[Dict[str, str], None]:
+        """
+        Unsafe attempt to retrieve the token, only return it if admin rights
+        """
+        token = attempt_to_log(form.get('username', ''), form.get('password', ''), session)
+        return token if is_admin_user(token['access_token']) else None
 
     async def logout(self, request: Request) -> bool:
         """
@@ -216,6 +219,20 @@ def is_monitoring_user(token: str = Depends(SCHEME)) -> AppUser:
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                         detail=MONITORING_ERROR, headers={'WWW-Authenticate': 'Bearer'})
+
+
+def upsert_new_user(token: str, user: str, password: str = '') -> None:
+    """
+    Upsert a new user if not already present in db.
+
+    NB: this method RAISES a http error if he token is invalid
+    """
+    user_id = _verify_access_token(token).id
+    with Session(engine) as session:
+        if not session.exec(select(AppUser).where(col(AppUser.id) == user_id)).first():
+            session.add(AppUser(user=user, password=password, permission=Permission.Consultant,
+                                id=user_id))
+            session.commit()
 
 
 def _create_access_token(data: Dict, tfa_value: Optional[str] = None) -> str:
