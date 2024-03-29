@@ -1,9 +1,12 @@
 """
 Module testing safe conversion methods
 """
+from datetime import datetime
+
 import numpy as np
 
 from ecodev_core import boolify
+from ecodev_core import datify
 from ecodev_core import floatify
 from ecodev_core import intify
 from ecodev_core import safe_clt
@@ -70,6 +73,13 @@ class SafeConversionTest(SafeTestCase):
         self.assertEqual(boolify('toto'), None)
         self.assertEqual(boolify(3), None)
         self.assertEqual(boolify(None), None)
+
+    def test_datify(self):
+        """
+        test datify behaviour
+        """
+        self.assertEqual(datetime(2024, 9, 2), datify('2024-09-02', '%Y-%m-%d'))
+        self.assertTrue(datify('2024-09', '%Y-%m-%d') is None)
 
     def test_safe_clt(self):
         """

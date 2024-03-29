@@ -38,6 +38,7 @@ from ecodev_core.authentication import JwtAuth
 from ecodev_core.authentication import MONITORING_ERROR
 from ecodev_core.authentication import safe_get_user
 from ecodev_core.authentication import TokenData
+from ecodev_core.authentication import upsert_new_user
 
 
 DATA_DIR = Path('/app/tests/unitary/data')
@@ -227,3 +228,14 @@ class AuthenticationTest(SafeTestCase):
         hash_1, hash_2 = _hash_password('toto'), _hash_password('toto')
         self.assertFalse(hash_1 == 'toto')
         self.assertFalse(hash_1 == hash_2)
+
+    def failed_upsert_user(self):
+        """
+        Test upserting an invalid user
+        """
+        try:
+            upsert_new_user('toto', 'toto')
+            wrong_user = None
+        except HTTPException as e:
+            wrong_user = e.detail
+        self.assertEqual(wrong_user, INVALID_CREDENTIALS)
