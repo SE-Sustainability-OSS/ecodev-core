@@ -34,13 +34,13 @@ BCK = BackUpSettings()
 BACKUP_URL = f'ftp://{BCK.backup_username}:{BCK.backup_password}@{BCK.backup_url}'
 
 
-def backup(backed_folder: Path, nb_saves: int = 5) -> None:
+def backup(backed_folder: Path, nb_saves: int = 5, additional_id: str = 'default') -> None:
     """
     Backup db and backed_folder: write the dump/tar on the backup server and erase old copies
     """
     timestamp = datetime.now().strftime('%Y_%m_%d_%Hh_%Mmn_%Ss')
-    _backup_db(Path.cwd() / f'db.{timestamp}.dump', nb_saves)
-    _backup_files(backed_folder, Path.cwd() / f'files.{timestamp}.tgz', nb_saves)
+    _backup_db(Path.cwd() / f'{additional_id}_db.{timestamp}.dump', nb_saves)
+    _backup_files(backed_folder, Path.cwd() / f'{additional_id}_files.{timestamp}.tgz', nb_saves)
 
 
 def _backup_db(db_dump_path: Path, nb_saves: int) -> None:
