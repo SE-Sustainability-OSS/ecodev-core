@@ -190,3 +190,14 @@ def _get_default_field_order(fields: List[ServerSideField]) -> Callable:
         return query.order_by(*[field.field for field in fields])
 
     return fields_order
+
+
+def db_table_to_df(db_objs: List[Any], index: str = 'id') -> pd.DataFrame:
+    """
+    Helper function, to transform sqlmodel.mapper table objects into a dataframe.
+    """
+    return (
+        pd.DataFrame([row.__dict__ for row in db_objs])
+        .drop(columns=['_sa_instance_state'])
+        .set_index(index)
+    )
