@@ -4,7 +4,10 @@ Module implementing some utilitary methods on pandas types
 import tempfile
 from base64 import b64decode
 from pathlib import Path
+from typing import Any
+from typing import Callable
 from typing import Dict
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -38,3 +41,29 @@ def get_excelfile(contents: str) -> pd.ExcelFile:
     content_type, content_string = contents.split(',')
     xl = b64decode(content_string)
     return pd.ExcelFile(xl)
+
+
+def safe_drop_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """
+    Returns a DataFrame without a list of columns, with a prior check on the existence of these
+    columns in the DataFrame
+    """
+
+    return df.drop(columns=[col for col in columns if col in df.columns])
+
+
+def is_null(value: Any) -> bool:
+    """
+    Checks if a value is null or not
+    """
+    return value is None or isinstance(value, float) and np.isnan(value)
+
+
+def get_value(column: str, method: Callable, row: pd.Series) -> Optional[Any]:
+    """
+    Function which performs a method on a value if the column name is in the row index
+    """
+    if column not in row.index or is_null(row[column]):
+        return None
+
+    return method(row[column])

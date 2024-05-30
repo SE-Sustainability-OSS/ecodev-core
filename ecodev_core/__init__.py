@@ -50,8 +50,10 @@ from ecodev_core.list_utils import lselectfirst
 from ecodev_core.logger import log_critical
 from ecodev_core.logger import logger_get
 from ecodev_core.pandas_utils import get_excelfile
+from ecodev_core.pandas_utils import get_value
 from ecodev_core.pandas_utils import jsonify_series
 from ecodev_core.pandas_utils import pd_equals
+from ecodev_core.pandas_utils import safe_drop_columns
 from ecodev_core.permissions import Permission
 from ecodev_core.pydantic_utils import Basic
 from ecodev_core.pydantic_utils import CustomFrozen
@@ -68,6 +70,7 @@ from ecodev_core.safe_utils import safe_clt
 from ecodev_core.safe_utils import SafeTestCase
 from ecodev_core.safe_utils import SimpleReturn
 from ecodev_core.safe_utils import stringify
+
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
     'write_json_file', 'load_json_file', 'make_dir', 'check_dependencies', 'compute_dependencies',
@@ -80,4 +83,4 @@ __all__ = [
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
-    'datify']
+    'datify', 'safe_drop_columns', 'get_value']
