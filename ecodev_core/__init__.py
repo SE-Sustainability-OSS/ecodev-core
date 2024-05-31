@@ -51,6 +51,7 @@ from ecodev_core.logger import log_critical
 from ecodev_core.logger import logger_get
 from ecodev_core.pandas_utils import get_excelfile
 from ecodev_core.pandas_utils import get_value
+from ecodev_core.pandas_utils import is_null
 from ecodev_core.pandas_utils import jsonify_series
 from ecodev_core.pandas_utils import pd_equals
 from ecodev_core.pandas_utils import safe_drop_columns
@@ -83,4 +84,4 @@ __all__ = [
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
-    'datify', 'safe_drop_columns', 'get_value']
+    'datify', 'safe_drop_columns', 'get_value', 'is_null']
