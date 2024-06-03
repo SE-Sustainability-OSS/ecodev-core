@@ -152,14 +152,12 @@ def attempt_to_log(user: str,
             'token_type': 'bearer'}
 
 
-def is_authorized_user(token: str = Depends(SCHEME),
-                       tfa_value: Optional[str] = None,
-                       tfa_check: bool = False) -> bool:
+def is_authorized_user(token: str = Depends(SCHEME)) -> bool:
     """
     Check if the passed token corresponds to an authorized user
     """
     try:
-        return get_current_user(token, tfa_value, tfa_check) is not None
+        return get_current_user(token) is not None
     except Exception:
         return False
 
@@ -198,14 +196,11 @@ def get_current_user(token: str,
         return session.exec(select(AppUser).where(col(AppUser.id) == token.id)).first()
 
 
-def is_admin_user(token: str = Depends(SCHEME),
-                  tfa_value: Optional[str] = None,
-                  tfa_check: bool = False) -> AppUser:
+def is_admin_user(token: str = Depends(SCHEME)) -> AppUser:
     """
     Retrieves (if it exists) the admin (meaning who has valid credentials) user from the db
     """
-    if (user := get_current_user(
-            token, tfa_value, tfa_check)) and user.permission == Permission.ADMIN:
+    if (user := get_current_user(token)) and user.permission == Permission.ADMIN:
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ADMIN_ERROR,
                         headers={'WWW-Authenticate': 'Bearer'})
