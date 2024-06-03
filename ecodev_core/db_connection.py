@@ -20,11 +20,11 @@ class DbSettings(BaseSettings):
     """
     Settings class used to connect to the postgresql database
     """
-    db_host: str
-    db_port: str
-    db_name: str
-    db_username: str
-    db_password: str
+    db_host: str = ''
+    db_port: str = ''
+    db_name: str = ''
+    db_username: str = ''
+    db_password: str = ''
     model_config = SettingsConfigDict(env_file='.env')
 
 

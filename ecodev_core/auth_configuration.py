@@ -9,9 +9,9 @@ class AuthenticationConfiguration(BaseSettings):
     """
     Simple authentication configuration class
     """
-    secret_key: str
-    algorithm: str
-    access_token_expire_minutes: int
+    secret_key: str = ''
+    algorithm: str = ''
+    access_token_expire_minutes: int = 0
     model_config = SettingsConfigDict(env_file='.env')
 
 
