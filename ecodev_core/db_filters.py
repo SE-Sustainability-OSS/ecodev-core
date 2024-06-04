@@ -7,6 +7,7 @@ from enum import unique
 from typing import Callable
 from typing import Dict
 
+from sqlalchemy import not_
 from sqlalchemy import func
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlmodel import col
@@ -29,6 +30,7 @@ class ServerSideFilter(str, Enum):
     LIKESTR = 'like_str'
     BOOL = 'bool'
     NUM = 'num'
+    NOT_CONTAINS_STR = 'not_contains_str'
 
 
 def _filter_start_str_field(field: InstrumentedAttribute,
@@ -125,13 +127,26 @@ def _filter_num_like_field(field: InstrumentedAttribute,
     return query
 
 
+def _filter_str_not_contains_field(field: InstrumentedAttribute,
+                                   query: SelectOfScalar,
+                                   operator: str,
+                                   value: str
+                                   ) -> SelectOfScalar:
+    """
+    Add filter to the passed query for a str like field. The filtering is done by checking if
+     the passed value is *not* contained in db values
+    """
+    return query.where(not_(col(field).contains(value))) if value else query
+
+
 SERVER_SIDE_FILTERS: Dict[ServerSideFilter, Callable] = {
     ServerSideFilter.STARTSTR: _filter_start_str_field,
     ServerSideFilter.STRICTSTR: _filter_strict_str_field,
     ServerSideFilter.LIKESTR: _filter_str_like_field,
     ServerSideFilter.ILIKESTR: _filter_str_ilike_field,
     ServerSideFilter.BOOL: _filter_bool_like_field,
-    ServerSideFilter.NUM: _filter_num_like_field
+    ServerSideFilter.NUM: _filter_num_like_field,
+    ServerSideFilter.NOT_CONTAINS_STR: _filter_str_not_contains_field
 }
 
 

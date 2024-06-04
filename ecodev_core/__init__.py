@@ -72,7 +72,9 @@ from ecodev_core.safe_utils import safe_clt
 from ecodev_core.safe_utils import SafeTestCase
 from ecodev_core.safe_utils import SimpleReturn
 from ecodev_core.safe_utils import stringify
-
+from ecodev_core.filter_db_filters import get_rows as filter_get_rows
+from ecodev_core.filter_db_filters import count_rows as filter_count_rows
+from ecodev_core.filter_db_filters import get_unique_values as filter_get_unique_values
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
     'write_json_file', 'load_json_file', 'make_dir', 'check_dependencies', 'compute_dependencies',
@@ -85,4 +87,5 @@ __all__ = [
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
+    'datify', 'filter_get_rows', 'filter_get_unique_values', 'filter_count_rows',
     'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email']
