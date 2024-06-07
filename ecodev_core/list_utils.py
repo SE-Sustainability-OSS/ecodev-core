@@ -45,6 +45,45 @@ def first_or_default(sequence: Union[List[Any], None],
     return next((elt for elt in sequence if condition(elt)), default)
 
 
+def sort_by_keys(unsorted_dict: dict, reverse: bool = False) -> dict:
+    """
+    Returns a sorted dictionary out of the passed unsorted_dict.
+    Sorting is done on unsorted_dict keys.
+    If reverse is True, reverse sorting
+    """
+    return dict(sorted(unsorted_dict.items(), reverse=reverse))
+
+
+def sort_by_values(unsorted_dict: dict, reverse: bool = False) -> dict:
+    """
+    Returns a sorted dictionary out of the passed unsorted_dict.
+    Sorting is done on unsorted_dict values.
+    If reverse is True, reverse sorting
+    """
+    return dict(sorted(unsorted_dict.items(), key=lambda item: item[1], reverse=reverse))
+
+
+def first_func_or_default(sequence: list[Callable] | None,
+                          elt: Any,
+                          condition: Callable | None = None,
+                          default: Any | None = None
+                          ) -> Any | None:
+    """
+    Returns the first element of a functional sequence if a certain criteria is met
+    or default value if the criteria is never met.
+    The criteria is like so:
+    - If no condition is provided, then
+      just check that func applied on elt is not None
+    - If a condition is provided, then
+       check that condition applied on func(elt) is not None
+    """
+    if not sequence:
+        return default
+
+    return next((func(elt) for func in sequence if (condition or (lambda x: x))(func(elt))),
+                default)
+
+
 def group_by(sequence: List[Any], key: Union[Callable, None]) -> Iterator[Tuple[Any, List[Any]]]:
     """
     Extension of itertools groupby method.

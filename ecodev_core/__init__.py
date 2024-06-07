@@ -42,12 +42,15 @@ from ecodev_core.db_retrieval import get_rows
 from ecodev_core.db_retrieval import ServerSideField
 from ecodev_core.email_sender import send_email
 from ecodev_core.enum_utils import enum_converter
+from ecodev_core.list_utils import first_func_or_default
 from ecodev_core.list_utils import first_or_default
 from ecodev_core.list_utils import first_transformed_or_default
 from ecodev_core.list_utils import group_by
 from ecodev_core.list_utils import group_by_value
 from ecodev_core.list_utils import lselect
 from ecodev_core.list_utils import lselectfirst
+from ecodev_core.list_utils import sort_by_keys
+from ecodev_core.list_utils import sort_by_values
 from ecodev_core.logger import log_critical
 from ecodev_core.logger import logger_get
 from ecodev_core.pandas_utils import get_excelfile
@@ -85,4 +88,5 @@ __all__ = [
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
-    'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email']
+    'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email', 'first_func_or_default',
+    'sort_by_keys', 'sort_by_values']
