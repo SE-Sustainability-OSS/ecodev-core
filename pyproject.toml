@@ -55,6 +55,7 @@ pydantic-settings = "~2"
 psycopg2-binary = "~2"
 openpyxl = "~3"
 xlsxwriter = "~3"
+uvicorn = "0.28.1"
 
 
 [build-system]
