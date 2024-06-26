@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ecodev-core"
-version = "0.0.31"
+version = "0.0.32"
 description = "Low level sqlmodel/fastapi/pydantic building blocks"
 authors = ["Thomas Epelbaum <tomepel@gmail.com>",
 					 "Olivier Gabriel <olivier.gabriel.geom@gmail.com>",
@@ -56,6 +56,7 @@ psycopg2-binary = "~2"
 openpyxl = "~3"
 xlsxwriter = "~3"
 uvicorn = "0.28.1"
+orjson = "^3.10.5"
 
 
 [build-system]
