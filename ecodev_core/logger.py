@@ -5,6 +5,9 @@ import logging
 import sys
 import traceback
 
+LIBS = ['azure', 'passlib', 'trimesh', 'fiona',
+        'urllib3', 'botocore', 'boto', 'boto3', 's3transfer']
+
 
 def log_critical(message: str, logger):
     """
@@ -18,9 +21,22 @@ def logger_get(name, level=logging.DEBUG):
     """
     Main method called by all other modules to log
     """
+    logging.basicConfig(level=level, stream=sys.stdout)
+    for lib in LIBS:
+        _safe_log_setter(lib)
     logger = logging.getLogger(name)
     config_log(logger, level, MyFormatter())
     return logger
+
+
+def _safe_log_setter(lib: str) -> None:
+    """
+    Safe logger. ERROR level not to be swamped by verbose library info.
+    """
+    try:
+        logging.getLogger(lib).setLevel(logging.ERROR)
+    except Exception:
+        pass
 
 
 class MyFormatter(logging.Formatter):

@@ -8,6 +8,8 @@ from typing import Dict
 from typing import List
 from typing import Union
 
+import yaml
+
 
 def write_json_file(json_data: Union[Dict, List], file_path: Path):
     """
@@ -26,6 +28,16 @@ def load_json_file(file_path: Path):
         loaded_json = json.load(f)
 
     return loaded_json
+
+
+def load_yaml_file(file_path: Path):
+    """
+    Load a yaml file at file_path location
+    """
+    with open(file_path) as file:
+        loaded_yaml = yaml.safe_load(file)
+
+    return loaded_yaml
 
 
 def make_dir(directory: Path):

@@ -118,3 +118,10 @@ def first_transformed_or_default(sequence: List[Any], transformation: Callable) 
      or default value if no non-trivial transformed elements are found.
     """
     return next((fx for elt in sequence if (fx := transformation(elt)) is not None), None)
+
+
+def dict_to_class(data: dict):
+    """
+    Convert a (possibly nested) dictionary to a class.
+    """
+    return {k: type(k, (), dict_to_class(v)) if isinstance(v, dict) else v for k, v in data.items()}

@@ -52,3 +52,4 @@ repos:
         - --follow-imports=silent
         additional_dependencies:
         - types-requests
+        - types-PyYAML
