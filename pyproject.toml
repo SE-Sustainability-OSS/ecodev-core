@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ecodev-core"
-version = "0.0.35"
+version = "0.0.36"
 description = "Low level sqlmodel/fastapi/pydantic building blocks"
 authors = ["Thomas Epelbaum <tomepel@gmail.com>",
 					 "Olivier Gabriel <olivier.gabriel.geom@gmail.com>",
@@ -42,21 +42,23 @@ classifiers = [
 ]
 [tool.poetry.dependencies]
 python = "^3.11"
+elasticsearch = "^8.14.0"
 fastapi = "~0"
-pandas = "~2"
-sqlmodel = "~0"
-numpy = "~1"
-pydantic = "2.9.2"
-python-jose = {version = "~3", extras = ["cryptography"]}
-passlib = {version = "~1", extras = ["bcyrypt"]}
-sqladmin = "0.15.2"
 httpx = "~0"
-pydantic-settings = "~2"
-psycopg2-binary = "~2"
+numpy = "~1"
 openpyxl = "~3"
-xlsxwriter = "~3"
-uvicorn = "0.28.1"
 orjson = "^3.10.5"
+pandas = "~2"
+passlib = {version = "~1", extras = ["bcyrypt"]}
+progressbar2 = "^4.4.2"
+psycopg2-binary = "~2"
+pydantic = "2.9.2"
+pydantic-settings = "~2"
+python-jose = {version = "~3", extras = ["cryptography"]}
+sqladmin = "0.15.2"
+sqlmodel = "~0"
+uvicorn = "0.28.1"
+xlsxwriter = "~3"
 
 
 [build-system]
