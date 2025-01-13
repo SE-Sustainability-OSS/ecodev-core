@@ -80,8 +80,10 @@ def _get_old_backups(file_to_backup: Path, nb_saves: int) -> List[str]:
     """
     Retrieve old versions of file_to_backup in order to erase them (more than nb_saves ago)
     """
-    output = run(['lftp', '-c', f'open {BACKUP_URL}; ls {file_to_backup.name.split(".")[0]}*'],
+    output = run(['lftp', '-c', f'open {BACKUP_URL}; ls'],
                  capture_output=True, text=True)
-    all_backups = sorted([x.split(' ')[-1] for x in output.stdout.splitlines()])
+    filename_base = file_to_backup.name.split('.')[0]
+    all_backups = sorted([x.split(' ')[-1]
+                         for x in output.stdout.splitlines() if filename_base in x])
     log.info(f'existing remote backups {all_backups}')
     return all_backups[:-nb_saves]
