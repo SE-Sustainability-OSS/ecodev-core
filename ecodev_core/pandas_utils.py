@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 
 import numpy as np
@@ -67,3 +68,15 @@ def get_value(column: str, method: Callable, row: pd.Series) -> Optional[Any]:
         return None
 
     return method(row[column])
+
+
+def db_table_to_df(db_objs: List[Any], index: str = 'id') -> pd.DataFrame:
+    """
+    Helper function, to transform sqlmodel.mapper table objects into a dataframe.
+    """
+
+    return (
+        pd.DataFrame([row.__dict__ for row in db_objs])
+        .drop(columns=['_sa_instance_state'])
+        .set_index(index)
+    )

@@ -11,7 +11,10 @@ from ecodev_core.app_user import AppUser
 from ecodev_core.app_user import select_user
 from ecodev_core.app_user import upsert_app_users
 from ecodev_core.auth_configuration import AUTH
+from ecodev_core.authentication import ACCESS_TOKEN
 from ecodev_core.authentication import attempt_to_log
+from ecodev_core.authentication import BEARER
+from ecodev_core.authentication import EXPIRES_AT
 from ecodev_core.authentication import get_access_token
 from ecodev_core.authentication import get_app_services
 from ecodev_core.authentication import get_current_user
@@ -24,6 +27,7 @@ from ecodev_core.authentication import safe_get_user
 from ecodev_core.authentication import SCHEME
 from ecodev_core.authentication import Token
 from ecodev_core.authentication import upsert_new_user
+from ecodev_core.authentication import WWW_AUTENTICATE
 from ecodev_core.backup import backup
 from ecodev_core.check_dependencies import check_dependencies
 from ecodev_core.check_dependencies import compute_dependencies
@@ -92,4 +96,5 @@ __all__ = [
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
     'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email', 'first_func_or_default',
-    'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment']
+    'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment', 'ACCESS_TOKEN',
+    'BEARER', 'EXPIRES_AT', 'WWW_AUTENTICATE']

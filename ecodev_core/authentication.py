@@ -8,6 +8,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 from fastapi import APIRouter
@@ -42,6 +43,10 @@ INVALID_USER = 'Invalid User'
 INVALID_TFA = 'Invalid TFA code'
 ADMIN_ERROR = 'Could not validate credentials. You need admin rights to call this'
 INVALID_CREDENTIALS = 'Invalid Credentials'
+ACCESS_TOKEN = 'access_token'
+BEARER = 'Bearer'
+EXPIRES_AT = 'expires_at'
+WWW_AUTENTICATE = 'WWW-Authenticate'
 log = logger_get(__name__)
 
 
@@ -51,6 +56,7 @@ class Token(Frozen):
     """
     access_token: str
     token_type: str
+    expires_at: float
 
 
 class TokenData(Frozen):
@@ -65,7 +71,7 @@ def get_access_token(token: Dict[str, Any]):
     Robust method to return access token or None
     """
     try:
-        return token.get('token', {}).get('access_token')
+        return token.get('token', {}).get(ACCESS_TOKEN)
     except AttributeError:
         return None
 
@@ -108,7 +114,7 @@ class JwtAuth(AuthenticationBackend):
         Unsafe attempt to retrieve the token, only return it if admin rights
         """
         token = attempt_to_log(form.get('username', ''), form.get('password', ''), session)
-        return token if is_admin_user(token['access_token']) else None
+        return token if is_admin_user(token[ACCESS_TOKEN]) else None
 
     async def logout(self, request: Request) -> bool:
         """
@@ -121,7 +127,7 @@ class JwtAuth(AuthenticationBackend):
         """
         Authentication procedure
         """
-        return (token := request.session.get('access_token')) and is_admin_user(token)
+        return (token := request.session.get(ACCESS_TOKEN)) and is_admin_user(token)
 
 
 def attempt_to_log(user: str,
@@ -147,9 +153,8 @@ def attempt_to_log(user: str,
     if not _check_password(password, db_user.password):
         log.warning('invalid user')
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=INVALID_CREDENTIALS)
-
-    return {'access_token': _create_access_token(data={'user_id': db_user.id}, tfa_value=tfa_value),
-            'token_type': 'bearer'}
+    token, expires_at = _create_access_token(data={'user_id': db_user.id}, tfa_value=tfa_value)
+    return {ACCESS_TOKEN: token, EXPIRES_AT: expires_at.timestamp(), 'token_type': BEARER}
 
 
 def is_authorized_user(token: str = Depends(SCHEME)) -> bool:
@@ -181,7 +186,7 @@ def get_user(token: str = Depends(SCHEME),
     if user := get_current_user(token, tfa_value, tfa_check):
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS,
-                        headers={'WWW-Authenticate': 'Bearer'})
+                        headers={'WWW-Authenticate': BEARER})
 
 
 def get_current_user(token: str,
@@ -203,7 +208,7 @@ def is_admin_user(token: str = Depends(SCHEME)) -> AppUser:
     if (user := get_current_user(token)) and user.permission == Permission.ADMIN:
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ADMIN_ERROR,
-                        headers={'WWW-Authenticate': 'Bearer'})
+                        headers={'WWW-Authenticate': BEARER})
 
 
 def is_monitoring_user(token: str = Depends(SCHEME)) -> AppUser:
@@ -213,7 +218,7 @@ def is_monitoring_user(token: str = Depends(SCHEME)) -> AppUser:
     if (user := get_current_user(token)) and user.user == MONITORING:
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail=MONITORING_ERROR, headers={'WWW-Authenticate': 'Bearer'})
+                        detail=MONITORING_ERROR, headers={'WWW-Authenticate': BEARER})
 
 
 def upsert_new_user(token: str, user: str, password: str = '') -> None:
@@ -230,7 +235,7 @@ def upsert_new_user(token: str, user: str, password: str = '') -> None:
             session.commit()
 
 
-def _create_access_token(data: Dict, tfa_value: Optional[str] = None) -> str:
+def _create_access_token(data: Dict, tfa_value: Optional[str] = None) -> Tuple[str, datetime]:
     """
     Create an access token out of the passed data. Only called if credentials are valid
     """
@@ -239,7 +244,7 @@ def _create_access_token(data: Dict, tfa_value: Optional[str] = None) -> str:
     to_encode['exp'] = expire
     if tfa_value:
         to_encode['tfa'] = _hash_password(tfa_value)
-    return jwt.encode(to_encode, AUTH.secret_key, algorithm=AUTH.algorithm)
+    return jwt.encode(to_encode, AUTH.secret_key, algorithm=AUTH.algorithm), expire
 
 
 def _verify_access_token(token: str,
@@ -252,14 +257,14 @@ def _verify_access_token(token: str,
         payload = jwt.decode(token, AUTH.secret_key, algorithms=[AUTH.algorithm])
         if tfa_check and (not tfa_value or not _check_password(tfa_value, payload.get('tfa'))):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_TFA,
-                                headers={'WWW-Authenticate': 'Bearer'})
+                                headers={'WWW-Authenticate': BEARER})
         if (user_id := payload.get('user_id')) is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_USER,
-                                headers={'WWW-Authenticate': 'Bearer'})
+                                headers={'WWW-Authenticate': BEARER})
         return TokenData(id=user_id)
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS,
-                            headers={'WWW-Authenticate': 'Bearer'}) from e
+                            headers={'WWW-Authenticate': BEARER}) from e
 
 
 def _hash_password(password: str) -> str:

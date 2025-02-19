@@ -2,6 +2,7 @@
 Module implementing a connection to an elastic search instance, and basic insertion/retrieval.
 """
 from typing import Any
+from typing import Dict
 from typing import Union
 
 import progressbar
@@ -69,7 +70,7 @@ def insert_es_fields(operations: list[dict], batch_size: int = ES_BATCH_SIZE) ->
         helpers.bulk(client, batch, index=ES_AUTH.index)
 
 
-def retrieve_es_fields(body: dict[str, Any]) -> list[dict]:
+def retrieve_es_fields(body: dict[str, Any]) -> Dict:
     """
     Core call to the elasticsearch index
     """
