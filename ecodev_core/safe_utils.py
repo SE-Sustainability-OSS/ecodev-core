@@ -13,6 +13,7 @@ from typing import Union
 from unittest import TestCase
 
 import numpy as np
+import pandas as pd
 from pydantic import Field
 
 from ecodev_core.logger import log_critical
@@ -175,6 +176,10 @@ def datify(date: str, date_format: str) -> Union[datetime, None]:
     """
     Safe conversion to a date format
     """
+    if pd.isnull(date):
+        return None
+    if isinstance(date, datetime):
+        return date
     return _transformify(date, lambda x: datetime.strptime(x, date_format))
 
 
