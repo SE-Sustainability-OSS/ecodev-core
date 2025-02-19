@@ -4,6 +4,7 @@ Module testing safe conversion methods
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
 
 from ecodev_core import boolify
 from ecodev_core import datify
@@ -79,7 +80,9 @@ class SafeConversionTest(SafeTestCase):
         test datify behaviour
         """
         self.assertEqual(datetime(2024, 9, 2), datify('2024-09-02', '%Y-%m-%d'))
+        self.assertEqual(datetime(2024, 9, 2), datify(datetime(2024, 9, 2), '%Y-%m-%d'))
         self.assertTrue(datify('2024-09', '%Y-%m-%d') is None)
+        self.assertTrue(datify(pd.NaT, '%Y-%m-%d') is None)
 
     def test_safe_clt(self):
         """
