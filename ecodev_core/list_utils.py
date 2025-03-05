@@ -125,3 +125,10 @@ def dict_to_class(data: dict):
     Convert a (possibly nested) dictionary to a class.
     """
     return {k: type(k, (), dict_to_class(v)) if isinstance(v, dict) else v for k, v in data.items()}
+
+
+def list_tuple_to_dict(data: list[tuple]) -> list[dict[str, Any]] | None:
+    """
+    Transforms the result of a sqlmodel query into a list of Dict
+    """
+    return [x._asdict() for x in data] if data else None  # type: ignore[attr-defined]
