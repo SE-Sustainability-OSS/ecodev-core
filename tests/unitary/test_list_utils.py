@@ -1,6 +1,14 @@
 """
 Module testing list utils methods
 """
+from sqlmodel import select
+from sqlmodel import Session
+
+from ecodev_core import AppRight
+from ecodev_core import AppUser
+from ecodev_core import create_db_and_tables
+from ecodev_core import delete_table
+from ecodev_core import engine
 from ecodev_core import first_or_default
 from ecodev_core import first_transformed_or_default
 from ecodev_core import group_by_value
@@ -9,6 +17,7 @@ from ecodev_core import lselectfirst
 from ecodev_core import SafeTestCase
 from ecodev_core.list_utils import first_func_or_default
 from ecodev_core.list_utils import group_by
+from ecodev_core.list_utils import list_tuple_to_dict
 from ecodev_core.list_utils import sort_by_keys
 from ecodev_core.list_utils import sort_by_values
 
@@ -17,6 +26,15 @@ class ListUtilsTest(SafeTestCase):
     """
     Class testing list utils methods
     """
+
+    def setUp(self):
+        """
+        Class testing db interaction
+        """
+        super().setUp()
+        create_db_and_tables(AppUser)
+        delete_table(AppRight)
+        delete_table(AppUser)
 
     def test_first_or_default(self):
         """
@@ -80,3 +98,16 @@ class ListUtilsTest(SafeTestCase):
         test sort_by_values method
         """
         self.assertEqual(sort_by_values({2: 3, 1: 1, 3: -1}), {3: -1, 1: 1, 2: 3})
+
+    def test_list_tuple_to_dict(self):
+        """
+        Test list_tuple_to_dict method
+        """
+        with Session(engine) as session:
+            session.bulk_insert_mappings(AppUser, [{'user': 'user', 'password': 'password'}])
+            users = list_tuple_to_dict(session.exec(select(AppUser.user, AppUser.password)).all())
+            self.assertEqual(type(users), list)
+            self.assertEqual(type(users[0]), dict)
+            self.assertEqual(len(users), 1)
+            self.assertEqual(users[0]['user'], 'user')
+            self.assertEqual(users[0]['password'], 'password')
