@@ -3,7 +3,7 @@ Module defining a dynamic setting class
 """
 from pathlib import Path
 
-from pydantic.utils import deep_update
+from pydantic.v1.utils import deep_update
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
