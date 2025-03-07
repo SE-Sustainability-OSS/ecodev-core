@@ -144,35 +144,50 @@ def safe_clt(func):
     return inner_function
 
 
-def stringify(x: Union[str, float]) -> Union[str, None]:
+def safe_method(func: Callable) -> Any | None:
+    """
+    Safe execution of a method
+    """
+    def inner_function(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            return None
+    return inner_function
+
+
+def stringify(x: Union[str, float], default: str | None = None) -> Union[str, None]:
     """
     Safe conversion of a (str, np.nan) value into a (str,None) one
     """
-    return _transformify(x, str)
+    return _transformify(x, str, default)
 
 
-def boolify(x: Union[Any]) -> Union[bool, None]:
+def boolify(x: Union[Any], default: bool | None = None) -> Union[bool, None]:
     """
     Safe conversion of a (str, np.nan) value into a (str,None) one
     """
-    return _transformify(x, _bool_check)
+    return _transformify(x, _bool_check, default)
 
 
-def intify(x: Union[str, float]) -> Union[int, None]:
+def intify(x: Union[str, float], default: int | None = None) -> Union[int, None]:
     """
     Safe conversion of a (int, np.nan) value into a (int,None) one
     """
-    return _transformify(x, int)
+    return _transformify(x, int, default)
 
 
-def floatify(x: Union[str, float]) -> Union[float, None]:
+def floatify(x: Union[str, float], default: float | None = None) -> Union[float, None]:
     """
     Safe conversion of a (float, np.nan) value into a (float,None) one
     """
-    return _transformify(x, float)
+    return _transformify(x, float, default)
 
 
-def datify(date: str, date_format: str) -> Union[datetime, None]:
+def datify(date: datetime | str,
+           date_format: str,
+           default: datetime | None = None
+           ) -> Union[datetime, None]:
     """
     Safe conversion to a date format
     """
@@ -180,21 +195,23 @@ def datify(date: str, date_format: str) -> Union[datetime, None]:
         return None
     if isinstance(date, datetime):
         return date
-    return _transformify(date, lambda x: datetime.strptime(x, date_format))
+    return _transformify(date, lambda x: datetime.strptime(x, date_format), default)
 
 
-def _transformify(x: Union[Any, float], transformation: Callable) -> Union[Any, None]:
+def _transformify(x: Union[Any, float],
+                  transformation: Callable,
+                  default: Any | None) -> Union[Any, None]:
     """
     Safe conversion of a (Any, np.nan) value into a (Any,None) one thanks to transformation
     """
     if x is None or (isinstance(x, float) and np.isnan(x)):
-        return None
+        return default
 
     try:
-        return transformation(x)
+        return transformed if (transformed := transformation(x)) is not None else default
 
     except ValueError:
-        return None
+        return default
 
 
 def _bool_check(x: Union[Any, float]):

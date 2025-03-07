@@ -3,11 +3,14 @@ Module implementing a simple monitoring table
 """
 import inspect
 from datetime import datetime
-from typing import Dict
 from typing import Optional
 
+from sqlmodel import cast
 from sqlmodel import col
+from sqlmodel import extract
 from sqlmodel import Field
+from sqlmodel import func
+from sqlmodel import Integer
 from sqlmodel import select
 from sqlmodel import Session
 from sqlmodel import SQLModel
@@ -53,7 +56,7 @@ class AppActivity(AppActivityBase, table=True):  # type: ignore
 
 
 def dash_monitor(method: str,
-                 token: Dict,
+                 token: dict,
                  application: str,
                  relevant_option: Optional[str] = None):
     """
@@ -101,8 +104,23 @@ def add_activity_to_db(method: str,
     session.commit()
 
 
-def get_recent_activities(last_date: str, session: Session):
+def get_recent_activities(last_date: str, session: Session) -> list[AppActivity]:
     """
     Returns all activities that happened after last_date
     """
     return session.exec(select(AppActivity).where(col(AppActivity.created_at) > last_date)).all()
+
+
+def get_monthly_activities(last_date: str, session: Session) -> dict[tuple[int, int], int]:
+    """
+    Returns all activities that happened after last_date, grouped by year month.
+    """
+    query = (select(
+        cast(extract('year', AppActivity.created_at), Integer).label('year'),
+        cast(extract('month', AppActivity.created_at), Integer).label('month'),
+        func.count().label('count'))
+        .where(col(AppActivity.created_at) > last_date)
+        .group_by(extract('year', AppActivity.created_at), extract('month', AppActivity.created_at))
+        .order_by(extract('year', AppActivity.created_at), extract('month', AppActivity.created_at))
+    )
+    return dict(sorted(((year, month), value) for year, month, value in session.exec(query).all()))
