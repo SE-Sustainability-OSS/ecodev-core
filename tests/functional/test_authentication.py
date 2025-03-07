@@ -1,6 +1,7 @@
 """
 Module testing authentication methods
 """
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -22,6 +23,7 @@ from ecodev_core import is_monitoring_user
 from ecodev_core import SafeTestCase
 from ecodev_core import select_user
 from ecodev_core import upsert_app_users
+from ecodev_core.app_activity import get_monthly_activities
 from ecodev_core.authentication import _create_access_token
 from ecodev_core.authentication import _hash_password
 from ecodev_core.authentication import _verify_access_token
@@ -108,6 +110,18 @@ class AuthenticationTest(SafeTestCase):
             dash_monitor('dash', {'token': token}, 'test')
             monitored = get_recent_activities('2024/1/1', session)
         self.assertEqual((len(monitored)), 2)
+
+    def test_monthly_monitoring(self):
+        """
+        Test that monitoring fastapi or dash entrypoint works
+        """
+        with Session(engine) as session:
+            token = attempt_to_log('monitoring', 'monitoring', session)
+            monito = is_monitoring_user(get_access_token({'token': token}))
+            fastapi_monitor('fastapi', monito, 'test', session)
+            dash_monitor('dash', {'token': token}, 'test')
+            monitored = get_monthly_activities('2024/1/1', session)
+        self.assertEqual(monitored[(datetime.now().year, datetime.now().month)], 2)
 
     def test_http_errors(self):
         """

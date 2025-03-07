@@ -43,6 +43,17 @@ def backup(backed_folder: Path, nb_saves: int = 5, additional_id: str = 'default
     _backup_files(backed_folder, Path.cwd() / f'{additional_id}_files.{timestamp}.tgz', nb_saves)
 
 
+def retrieve_most_recent_backup(name: str = 'default_files') -> None:
+    """
+    Retrieve from backup server the most recent backup of the name family.
+    """
+    output = run(['lftp', '-c', f'open {BACKUP_URL}; ls'], capture_output=True, text=True)
+    all_backups = sorted([x.split(' ')[-1] for x in output.stdout.splitlines() if name in x])
+    log.info(f'most recent backup {all_backups[-1]}')
+    run(['lftp', '-c', f'open {BACKUP_URL}; get {all_backups[-1]}'])
+    return None
+
+
 def _backup_db(db_dump_path: Path, nb_saves: int) -> None:
     """
     Pg_dump of DB_URL db andwrite on the backup server
@@ -80,8 +91,7 @@ def _get_old_backups(file_to_backup: Path, nb_saves: int) -> List[str]:
     """
     Retrieve old versions of file_to_backup in order to erase them (more than nb_saves ago)
     """
-    output = run(['lftp', '-c', f'open {BACKUP_URL}; ls'],
-                 capture_output=True, text=True)
+    output = run(['lftp', '-c', f'open {BACKUP_URL}; ls'], capture_output=True, text=True)
     filename_base = file_to_backup.name.split('.')[0]
     all_backups = sorted([x.split(' ')[-1]
                          for x in output.stdout.splitlines() if filename_base in x])
