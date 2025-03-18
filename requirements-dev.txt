@@ -5,6 +5,7 @@ openpyxl==3.*
 notebook==6.*
 pandas==2.*
 passlib[bcrypt]==1.*
+progressbar2==4.*
 psycopg2[binary]==2.*
 pydantic[python-dotenv]==2.*
 pydantic-settings==2.*

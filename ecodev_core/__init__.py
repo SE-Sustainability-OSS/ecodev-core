@@ -40,6 +40,12 @@ from ecodev_core.db_insertion import get_raw_df
 from ecodev_core.db_retrieval import count_rows
 from ecodev_core.db_retrieval import get_rows
 from ecodev_core.db_retrieval import ServerSideField
+from ecodev_core.db_upsertion import field
+from ecodev_core.db_upsertion import sfield
+from ecodev_core.db_upsertion import upsert_data
+from ecodev_core.db_upsertion import upsert_deletor
+from ecodev_core.db_upsertion import upsert_dict_data
+from ecodev_core.db_upsertion import upsert_selector
 from ecodev_core.deployment import Deployment
 from ecodev_core.email_sender import send_email
 from ecodev_core.enum_utils import enum_converter
@@ -78,7 +84,10 @@ from ecodev_core.safe_utils import SafeTestCase
 from ecodev_core.safe_utils import SimpleReturn
 from ecodev_core.safe_utils import stringify
 from ecodev_core.settings import Settings
-
+from ecodev_core.version import db_to_value
+from ecodev_core.version import get_row_versions
+from ecodev_core.version import get_versions
+from ecodev_core.version import Version
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
     'write_json_file', 'load_json_file', 'make_dir', 'check_dependencies', 'compute_dependencies',
@@ -92,4 +101,6 @@ __all__ = [
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
     'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email', 'first_func_or_default',
-    'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment']
+    'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment', 'Version',
+    'sfield', 'field', 'upsert_data', 'upsert_deletor', 'get_row_versions', 'get_versions',
+    'db_to_value', 'upsert_dict_data', 'upsert_selector']

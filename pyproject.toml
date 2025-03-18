@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ecodev-core"
-version = "0.0.43"
+version = "0.0.44"
 description = "Low level sqlmodel/fastapi/pydantic building blocks"
 authors = ["Thomas Epelbaum <tomepel@gmail.com>",
 					 "Olivier Gabriel <olivier.gabriel.geom@gmail.com>",
