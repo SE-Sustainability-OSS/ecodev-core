@@ -83,24 +83,27 @@ def upsert_deletor(values: SQLModel, session: Session):
         session.commit()
 
 
-def upsert_data(df: Union[pd.DataFrame], db_schema: SQLModelMetaclass, session: Session) -> None:
+def upsert_df_data(df: Union[pd.DataFrame], db_schema: SQLModelMetaclass, session: Session) -> None:
     """
     Upsert the passed df into db_schema db.
     """
-    upsert_dict_data([x.to_dict() for _, x in df.iterrows()], db_schema, session)
+    upsert_data([x.to_dict() for _, x in df.iterrows()], session, raw_db_schema=db_schema)
 
 
-def upsert_dict_data(data: list[dict], db_schema: SQLModelMetaclass, session: Session) -> None:
+def upsert_data(data: list[dict | SQLModelMetaclass],
+                session: Session,
+                raw_db_schema: SQLModelMetaclass | None = None) -> None:
     """
     Upsert the passed list of dicts (corresponding to db_schema) into db_schema db.
     """
+    db_schema = raw_db_schema or data[0].__class__
     selector = partial(upsert_selector, db_schema=db_schema)
     updator = partial(upsert_updator, db_schema=db_schema)
     batches = [data[i:i + BATCH_SIZE] for i in range(0, len(data), BATCH_SIZE)]
 
     for batch in progressbar.progressbar(batches, redirect_stdout=False):
         for row in batch:
-            new_object = db_schema(**row)
+            new_object = db_schema(**row) if isinstance(row, dict) else row
             if in_db := session.exec(selector(new_object)).first():
                 session.exec(updator(new_object, in_db.id, session))
             else:

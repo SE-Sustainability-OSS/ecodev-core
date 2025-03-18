@@ -21,8 +21,8 @@ from ecodev_core import get_versions
 from ecodev_core import Permission
 from ecodev_core import SafeTestCase
 from ecodev_core import sfield
-from ecodev_core import upsert_data
 from ecodev_core import upsert_deletor
+from ecodev_core import upsert_df_data
 from ecodev_core import Version
 
 
@@ -78,7 +78,7 @@ class UpsertorTest(SafeTestCase):
         df_init = pd.DataFrame.from_records([foo.model_dump(), ffoo.model_dump()])
 
         with Session(engine) as session:
-            upsert_data(df_init, UpFoo, session)
+            upsert_df_data(df_init, UpFoo, session)
             foos = session.exec(select(UpFoo).order_by(UpFoo.id)).all()
             versions = get_row_versions('up_foo', foos[0].id, session)
 
@@ -90,7 +90,7 @@ class UpsertorTest(SafeTestCase):
         df1 = pd.DataFrame.from_records([foo2.model_dump(), ffoo.model_dump()])
 
         with Session(engine) as session:
-            upsert_data(df1, UpFoo, session)
+            upsert_df_data(df1, UpFoo, session)
             foos = session.exec(select(UpFoo).order_by(UpFoo.id)).all()
             versions = get_row_versions('up_foo', foos[0].id, session)
 
@@ -105,7 +105,7 @@ class UpsertorTest(SafeTestCase):
         df2 = pd.DataFrame.from_records([foo3.model_dump(), ffoo.model_dump()])
 
         with Session(engine) as session:
-            upsert_data(df2, UpFoo, session)
+            upsert_df_data(df2, UpFoo, session)
             foos = session.exec(select(UpFoo).order_by(UpFoo.id)).all()
             versions = get_row_versions('up_foo', foos[0].id, session)
             versions_3 = get_versions('up_foo', 'bar3', foos[0].id, session)

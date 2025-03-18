@@ -44,7 +44,7 @@ from ecodev_core.db_upsertion import field
 from ecodev_core.db_upsertion import sfield
 from ecodev_core.db_upsertion import upsert_data
 from ecodev_core.db_upsertion import upsert_deletor
-from ecodev_core.db_upsertion import upsert_dict_data
+from ecodev_core.db_upsertion import upsert_df_data
 from ecodev_core.db_upsertion import upsert_selector
 from ecodev_core.deployment import Deployment
 from ecodev_core.email_sender import send_email
@@ -102,5 +102,5 @@ __all__ = [
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
     'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email', 'first_func_or_default',
     'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment', 'Version',
-    'sfield', 'field', 'upsert_data', 'upsert_deletor', 'get_row_versions', 'get_versions',
-    'db_to_value', 'upsert_dict_data', 'upsert_selector']
+    'sfield', 'field', 'upsert_df_data', 'upsert_deletor', 'get_row_versions', 'get_versions',
+    'db_to_value', 'upsert_data', 'upsert_selector']
