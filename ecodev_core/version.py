@@ -97,15 +97,15 @@ def _col_type_to_db(col_type: type | EnumType) -> ColType:
     """
     Forge ColType out of passed col_type
     """
-    if isinstance(int, col_type):
+    if issubclass(int, col_type):
         return ColType.INT
-    if isinstance(bool, col_type):
+    if issubclass(bool, col_type):
         return ColType.BOOL
-    if isinstance(float, col_type):
+    if issubclass(float, col_type):
         return ColType.FLOAT
-    if isinstance(str, col_type):
+    if issubclass(str, col_type):
         return ColType.STR
-    if isinstance(datetime, col_type):
+    if issubclass(datetime, col_type):
         return ColType.DATE
     return ColType.ENUM
 
