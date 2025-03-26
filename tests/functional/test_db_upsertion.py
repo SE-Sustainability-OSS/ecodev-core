@@ -21,6 +21,7 @@ from ecodev_core import get_versions
 from ecodev_core import Permission
 from ecodev_core import SafeTestCase
 from ecodev_core import sfield
+from ecodev_core import upsert_data
 from ecodev_core import upsert_deletor
 from ecodev_core import upsert_df_data
 from ecodev_core import Version
@@ -141,3 +142,41 @@ class UpsertorTest(SafeTestCase):
 
         self.assertEqual(len(foos), 1)
         self.assertEqual(len(versions), 0)
+
+    def test_datetime(self):
+        """
+        Testing DB insertion for datetime fields
+        """
+        foo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
+                    bar7=datetime(2025, 3, 17),
+                    bar8=Permission.ADMIN)
+
+        with Session(engine) as session:
+            upsert_data([foo], session)
+            upsert_data([foo], session)
+            foos = session.exec(select(UpFoo)).all()
+
+        self.assertEqual(len(foos), 1)
+        self.assertEqual(len(get_row_versions('up_foo', foos[0].id, session)), 0)
+
+        ffoo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
+                     bar7=datetime(2025, 3, 17, 0),
+                     bar8=Permission.ADMIN)
+
+        with Session(engine) as session:
+            upsert_data([ffoo], session)
+            foos = session.exec(select(UpFoo)).all()
+
+        self.assertEqual(len(foos), 1)
+        self.assertEqual(len(get_row_versions('up_foo', foos[0].id, session)), 0)
+
+        fffoo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
+                      bar7=datetime(2025, 3, 17, 0, 0),
+                      bar8=Permission.ADMIN)
+
+        with Session(engine) as session:
+            upsert_data([fffoo], session)
+            foos = session.exec(select(UpFoo)).all()
+
+        self.assertEqual(len(foos), 1)
+        self.assertEqual(len(get_row_versions('up_foo', foos[0].id, session)), 0)

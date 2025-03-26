@@ -1,7 +1,9 @@
 """
 Module handling CRUD and version operations
 """
+from datetime import datetime
 from functools import partial
+from typing import Any
 from typing import Union
 
 import pandas as pd
@@ -78,10 +80,18 @@ def upsert_updator(values: SQLModel,
     col_types = {x: y.annotation for x, y in db_schema.__fields__.items()}
     table = db_schema.__tablename__
 
-    for col, val in {k: v for k, v in db.items() if k in to_update and v != to_update[k]}.items():
+    for col, val in {k: v for k, v in db.items() if k in to_update and _value_comparator(
+            v, to_update[k])}.items():
         session.add(Version.from_table_row(table, col, row_id, col_types[col], val))
 
     return update(db_schema).where(db_schema.id == row_id).values(**to_update)
+
+
+def _value_comparator(v: Any, to_update: Any) -> bool:
+    """
+    Performs a comparison between the value in db and the value to be upserted
+    """
+    return v.date() != to_update.date() if isinstance(v, datetime) else v != to_update
 
 
 def upsert_deletor(values: SQLModel, session: Session):
