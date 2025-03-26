@@ -22,6 +22,7 @@ from ecodev_core.version import Version
 BATCH_SIZE = 5000
 FILTER_ON = 'filter_on'
 INFO = 'info'
+SA_COLUMN_KWARGS = 'sa_column_kwargs'
 
 
 def sfield(**kwargs):
@@ -29,14 +30,26 @@ def sfield(**kwargs):
     Field constructor for columns not to be versioned. Those are the columns on which to select.
     They morally are a sort of unique identifier of a row (like id but more business meaningful)
     """
-    return Field(**kwargs, sa_column_kwargs={INFO: {FILTER_ON: True}})
+    sa_column_kwargs = _get_sa_column_kwargs(kwargs, sfield=True)
+    return Field(**kwargs, sa_column_kwargs=sa_column_kwargs)
 
 
 def field(**kwargs):
     """
     Field constructor for columns to be versioned.
     """
-    return Field(**kwargs, sa_column_kwargs={INFO: {FILTER_ON: False}})
+    sa_column_kwargs = _get_sa_column_kwargs(kwargs, sfield=False)
+    return Field(**kwargs, sa_column_kwargs=sa_column_kwargs)
+
+
+def _get_sa_column_kwargs(kwargs, sfield: bool) -> dict:
+    """
+    Combine existing sa_column_kwargs with the new field necessary for versioning
+    """
+    if not (additional_vals := kwargs.get(SA_COLUMN_KWARGS)):
+        return {INFO: {FILTER_ON: sfield}}
+    kwargs.pop(SA_COLUMN_KWARGS)
+    return additional_vals | {INFO: {FILTER_ON: sfield}}
 
 
 def upsert_selector(values: SQLModel, db_schema: SQLModelMetaclass) -> SelectOfScalar:

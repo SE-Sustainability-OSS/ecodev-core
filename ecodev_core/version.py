@@ -38,7 +38,7 @@ class Version(SQLModel, table=True):  # type: ignore
     Attributes are:
         - table: the table to version
         - column: the column of table to version
-        - row_id: the the row id of the column of table to version
+        - row_id: the row id of the column of table to version
         - col_type: the column type
         - value: the value to store (previous row/column/table version)
     """
@@ -97,15 +97,15 @@ def _col_type_to_db(col_type: type | EnumType) -> ColType:
     """
     Forge ColType out of passed col_type
     """
-    if col_type == int:
+    if issubclass(int, col_type):
         return ColType.INT
-    if col_type == bool:
+    if issubclass(bool, col_type):
         return ColType.BOOL
-    if col_type == float:
+    if issubclass(float, col_type):
         return ColType.FLOAT
-    if col_type == str:
+    if issubclass(str, col_type):
         return ColType.STR
-    if col_type == datetime:
+    if issubclass(datetime, col_type):
         return ColType.DATE
     return ColType.ENUM
 
