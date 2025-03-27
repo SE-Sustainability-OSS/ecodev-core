@@ -135,10 +135,10 @@ def db_to_value(db_value: str | None, col_type: type | EnumType) -> COL_TYPES:
     """
     if db_value is None:
         return None
-    if col_type in [int, str, float]:
+    if issubclass(int, col_type) or issubclass(str, col_type) or issubclass(float, col_type):
         return col_type(db_value)
-    if col_type == bool:
-        return True if db_value == 'True' else False
-    if col_type == datetime:
+    if issubclass(bool, col_type):
+        return db_value == 'True'
+    if issubclass(datetime, col_type):
         return datetime.strptime(db_value, '%Y-%m-%d %H:%M:%S.%f')
     return col_type[db_value]   # type: ignore[index]
