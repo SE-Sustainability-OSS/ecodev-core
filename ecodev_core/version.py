@@ -130,15 +130,15 @@ def _value_to_db(value: COL_TYPES, col_type: ColType) -> str | None:
 
 def db_to_value(db_value: str | None, col_type: type | EnumType) -> COL_TYPES:
     """
-    Convert back a str version value stored to a real value (types hancled listed in ColType)
+    Convert back a str version value stored to a real value (types handled listed in ColType)
     NB: assumption that if the type is not known, this is an enum type.
     """
     if db_value is None:
         return None
-    if issubclass(int, col_type) or issubclass(str, col_type) or issubclass(float, col_type):
+    if col_type in [int, str, float]:
         return col_type(db_value)
-    if issubclass(bool, col_type):
+    if col_type == bool:
         return db_value == 'True'
-    if issubclass(datetime, col_type):
+    if col_type == datetime:
         return datetime.strptime(db_value, '%Y-%m-%d %H:%M:%S.%f')
-    return col_type[db_value]   # type: ignore[index]
+    return col_type[db_value]  # type: ignore[index]
