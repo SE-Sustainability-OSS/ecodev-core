@@ -188,7 +188,7 @@ class UpsertorTest(SafeTestCase):
                     bar7=datetime(2025, 3, 17),
                     bar8=Permission.ADMIN)
         
-        columns = get_sfield_columns(foo)
+        columns = get_sfield_columns(UpFoo)
         self.assertEqual(columns, ['bar1', 'bar2'])
         
         values = get_sfield_values(foo)

@@ -196,7 +196,7 @@ def _get_default_field_order(fields: List[ServerSideField]) -> Callable:
 
 def get_sfield_columns(db_model: SQLModelMetaclass):
     """
-    get all the columsn flagged as sfields from schema
+    get all the columns flagged as sfields from schema
     Args:
         db_model (SQLModelMetaclass): db_model
     """
