@@ -25,6 +25,8 @@ from ecodev_core import upsert_data
 from ecodev_core import upsert_deletor
 from ecodev_core import upsert_df_data
 from ecodev_core import Version
+from ecodev_core.db_retrieval import get_sfield_columns
+from ecodev_core.db_retrieval import get_sfield_values
 
 
 class UpFoo(SQLModel, table=True):  # type: ignore
@@ -180,3 +182,24 @@ class UpsertorTest(SafeTestCase):
 
         self.assertEqual(len(foos), 1)
         self.assertEqual(len(get_row_versions('up_foo', foos[0].id, session)), 0)
+        
+    def test_get_sfields(self):
+        foo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
+                    bar7=datetime(2025, 3, 17),
+                    bar8=Permission.ADMIN)
+        
+        columns = get_sfield_columns(foo)
+        self.assertEqual(columns, ['bar1', 'bar2'])
+        
+        values = get_sfield_values(foo)
+        self.assertEqual(values, {
+            'bar1': 'bar',
+            'bar2': True
+        })
+        
+        values1 = get_sfield_values(foo, UpFoo)
+        self.assertEqual(values1, {
+            'bar1': 'bar',
+            'bar2': True
+        })
+        

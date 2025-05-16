@@ -12,16 +12,18 @@ from typing import Union
 
 import pandas as pd
 from sqlalchemy import func
-from sqlmodel import col
+from sqlmodel import col, inspect
 from sqlmodel import or_
 from sqlmodel import select
 from sqlmodel import Session
+from sqlmodel.main import SQLModelMetaclass
 from sqlmodel.sql.expression import Select
 from sqlmodel.sql.expression import SelectOfScalar
 
 from ecodev_core.db_connection import engine
 from ecodev_core.db_filters import SERVER_SIDE_FILTERS
 from ecodev_core.db_filters import ServerSideFilter
+from ecodev_core.db_upsertion import FILTER_ON
 from ecodev_core.list_utils import first_or_default
 from ecodev_core.pydantic_utils import Frozen
 
@@ -190,3 +192,30 @@ def _get_default_field_order(fields: List[ServerSideField]) -> Callable:
         return query.order_by(*[field.field for field in fields])
 
     return fields_order
+
+
+def get_sfield_columns(db_model: SQLModelMetaclass):
+    """
+    get all the columsn flagged as sfields from schema
+    Args:
+        db_model (SQLModelMetaclass): db_model
+    """
+    return [
+        x.name
+        for x in inspect(db_model).c
+        if x.info.get(FILTER_ON) is True
+    ]
+
+
+def get_sfield_values(row: dict | SQLModelMetaclass,
+                      db_schema: SQLModelMetaclass | None = None) -> Dict:
+    """
+    Returns a dict with only sfields from object
+    Args:
+        row: any object with ecodev_core field and sfield
+        db_schema (SQLModelMetaclass): db_schema. Use the schema of row if not specified
+    Returns:
+        Dict
+    """
+    return {pk: getattr(row, pk)
+            for pk in get_sfield_columns(db_schema or row.__class__)}
