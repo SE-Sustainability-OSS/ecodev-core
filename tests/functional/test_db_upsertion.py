@@ -26,7 +26,7 @@ from ecodev_core import upsert_deletor
 from ecodev_core import upsert_df_data
 from ecodev_core import Version
 from ecodev_core.db_upsertion import get_sfield_columns
-from ecodev_core.db_upsertion import filter_to_sfields_dict
+from ecodev_core.db_upsertion import filter_to_sfield_dict
 
 
 class UpFoo(SQLModel, table=True):  # type: ignore
@@ -191,13 +191,13 @@ class UpsertorTest(SafeTestCase):
         columns = get_sfield_columns(UpFoo)
         self.assertEqual(columns, ['bar1', 'bar2'])
         
-        values = filter_to_sfields_dict(foo)
+        values = filter_to_sfield_dict(foo)
         self.assertEqual(values, {
             'bar1': 'bar',
             'bar2': True
         })
         
-        values1 = filter_to_sfields_dict(foo, UpFoo)
+        values1 = filter_to_sfield_dict(foo, UpFoo)
         self.assertEqual(values1, {
             'bar1': 'bar',
             'bar2': True
