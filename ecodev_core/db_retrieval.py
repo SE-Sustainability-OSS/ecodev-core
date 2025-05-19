@@ -12,11 +12,10 @@ from typing import Union
 
 import pandas as pd
 from sqlalchemy import func
-from sqlmodel import col, inspect
+from sqlmodel import col
 from sqlmodel import or_
 from sqlmodel import select
 from sqlmodel import Session
-from sqlmodel.main import SQLModelMetaclass
 from sqlmodel.sql.expression import Select
 from sqlmodel.sql.expression import SelectOfScalar
 
