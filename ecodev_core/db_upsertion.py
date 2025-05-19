@@ -5,7 +5,6 @@ from datetime import datetime
 from functools import partial
 from typing import Any
 from typing import Union
-from typing import Dict
 
 import pandas as pd
 import progressbar
@@ -135,11 +134,13 @@ def upsert_data(data: list[dict | SQLModelMetaclass],
         session.commit()
 
 
-def get_sfield_columns(db_model: SQLModelMetaclass):
+def get_sfield_columns(db_model: SQLModelMetaclass) -> list[str]:
     """
     get all the columsn flagged as sfields from schema
     Args:
         db_model (SQLModelMetaclass): db_model
+    Returns:
+        list of str with the names of the columns
     """
     return [
         x.name
@@ -148,15 +149,16 @@ def get_sfield_columns(db_model: SQLModelMetaclass):
     ]
     
     
-def get_sfield_values(row: dict | SQLModelMetaclass, 
-                      db_schema: SQLModelMetaclass | None = None) -> Dict:
+def filter_to_sfields(row: dict | SQLModelMetaclass, 
+                       db_schema: SQLModelMetaclass | None = None) \
+                           -> dict[str, dict | SQLModelMetaclass]:
     """
     Returns a dict with only sfields from object
     Args:
         row: any object with ecodev_core field and sfield
         db_schema (SQLModelMetaclass): db_schema. Use the schema of row if not specified
     Returns:
-        Dict
+        dict
     """
     return {pk: getattr(row, pk)
             for pk in get_sfield_columns(db_schema or row.__class__)}
