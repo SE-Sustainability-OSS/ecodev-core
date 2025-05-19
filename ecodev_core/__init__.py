@@ -46,8 +46,8 @@ from ecodev_core.db_upsertion import upsert_data
 from ecodev_core.db_upsertion import upsert_deletor
 from ecodev_core.db_upsertion import upsert_df_data
 from ecodev_core.db_upsertion import upsert_selector
-from ecodev_core.db_retrieval import get_sfield_columns
-from ecodev_core.db_retrieval import get_sfield_values
+from ecodev_core.db_upsertion import get_sfield_columns
+from ecodev_core.db_upsertion import filter_to_sfields_dict
 from ecodev_core.deployment import Deployment
 from ecodev_core.email_sender import send_email
 from ecodev_core.enum_utils import enum_converter
@@ -105,4 +105,4 @@ __all__ = [
     'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email', 'first_func_or_default',
     'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment', 'Version',
     'sfield', 'field', 'upsert_df_data', 'upsert_deletor', 'get_row_versions', 'get_versions',
-    'db_to_value', 'upsert_data', 'upsert_selector', 'get_sfield_columns', 'get_sfield_values']
+    'db_to_value', 'upsert_data', 'upsert_selector', 'get_sfield_columns', 'filter_to_sfields_dict']

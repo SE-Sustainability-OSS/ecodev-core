@@ -149,9 +149,9 @@ def get_sfield_columns(db_model: SQLModelMetaclass) -> list[str]:
     ]
     
     
-def filter_to_sfields(row: dict | SQLModelMetaclass, 
-                       db_schema: SQLModelMetaclass | None = None) \
-                           -> dict[str, dict | SQLModelMetaclass]:
+def filter_to_sfields_dict(row: dict | SQLModelMetaclass, 
+                           db_schema: SQLModelMetaclass | None = None) \
+                              -> dict[str, dict | SQLModelMetaclass]:
     """
     Returns a dict with only sfields from object
     Args:
