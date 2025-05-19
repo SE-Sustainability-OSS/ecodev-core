@@ -192,30 +192,3 @@ def _get_default_field_order(fields: List[ServerSideField]) -> Callable:
         return query.order_by(*[field.field for field in fields])
 
     return fields_order
-
-
-def get_sfield_columns(db_model: SQLModelMetaclass):
-    """
-    get all the columns flagged as sfields from schema
-    Args:
-        db_model (SQLModelMetaclass): db_model
-    """
-    return [
-        x.name
-        for x in inspect(db_model).c
-        if x.info.get(FILTER_ON) is True
-    ]
-
-
-def get_sfield_values(row: dict | SQLModelMetaclass,
-                      db_schema: SQLModelMetaclass | None = None) -> Dict:
-    """
-    Returns a dict with only sfields from object
-    Args:
-        row: any object with ecodev_core field and sfield
-        db_schema (SQLModelMetaclass): db_schema. Use the schema of row if not specified
-    Returns:
-        Dict
-    """
-    return {pk: getattr(row, pk)
-            for pk in get_sfield_columns(db_schema or row.__class__)}
