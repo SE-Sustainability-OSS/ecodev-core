@@ -132,3 +132,34 @@ def upsert_data(data: list[dict | SQLModelMetaclass],
             else:
                 session.add(new_object)
         session.commit()
+
+
+def get_sfield_columns(db_model: SQLModelMetaclass) -> list[str]:
+    """
+    get all the columsn flagged as sfields from schema
+    Args:
+        db_model (SQLModelMetaclass): db_model
+    Returns:
+        list of str with the names of the columns
+    """
+    return [
+        x.name
+        for x in inspect(db_model).c
+        if x.info.get(FILTER_ON) is True
+    ]
+    
+    
+def filter_to_sfield_dict(row: dict | SQLModelMetaclass, 
+                           db_schema: SQLModelMetaclass | None = None) \
+                              -> dict[str, dict | SQLModelMetaclass]:
+    """
+    Returns a dict with only sfields from object
+    Args:
+        row: any object with ecodev_core field and sfield
+        db_schema (SQLModelMetaclass): db_schema. Use the schema of row if not specified
+    Returns:
+        dict
+    """
+    return {pk: getattr(row, pk)
+            for pk in get_sfield_columns(db_schema or row.__class__)}
+    

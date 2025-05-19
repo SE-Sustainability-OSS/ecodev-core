@@ -22,6 +22,7 @@ from sqlmodel.sql.expression import SelectOfScalar
 from ecodev_core.db_connection import engine
 from ecodev_core.db_filters import SERVER_SIDE_FILTERS
 from ecodev_core.db_filters import ServerSideFilter
+from ecodev_core.db_upsertion import FILTER_ON
 from ecodev_core.list_utils import first_or_default
 from ecodev_core.pydantic_utils import Frozen
 
