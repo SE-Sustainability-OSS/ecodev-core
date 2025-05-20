@@ -10,18 +10,20 @@ from typing import List
 from typing import Union
 
 import pandas as pd
+import progressbar
 from fastapi import BackgroundTasks
 from fastapi import UploadFile
 from pandas import ExcelFile
 from sqlmodel import Session
 from sqlmodel import SQLModel
+from sqlmodel.main import SQLModelMetaclass
 from sqlmodel.sql.expression import SelectOfScalar
 
+from ecodev_core.db_upsertion import BATCH_SIZE
 from ecodev_core.logger import log_critical
 from ecodev_core.logger import logger_get
 from ecodev_core.pydantic_utils import CustomFrozen
 from ecodev_core.safe_utils import SimpleReturn
-
 
 log = logger_get(__name__)
 
@@ -72,13 +74,31 @@ async def insert_file(file: UploadFile, insertor: Insertor, session: Session) ->
     insert_data(df_raw, insertor, session)
 
 
-def insert_data(df:  Union[pd.DataFrame, ExcelFile], insertor: Insertor, session: Session) -> None:
+def insert_data(df: Union[pd.DataFrame, ExcelFile], insertor: Insertor, session: Session) -> None:
     """
     Inserts a csv/df into a database
     """
     for row in insertor.convertor(df):
         session.add(create_or_update(session, row, insertor))
     session.commit()
+
+
+def insert_batch_data(data: list[dict | SQLModelMetaclass],
+                      session: Session,
+                      raw_db_schema: SQLModelMetaclass | None = None) -> None:
+    """
+    Insert the passed list of dicts (corresponding to db_schema) into db_schema db.
+    Warning: this only inserts data, without checking for pre-existence.
+    Ensure deleting the data before using it to avoid duplicates.
+    """
+    db_schema = raw_db_schema or data[0].__class__
+    batches = [data[i:i + BATCH_SIZE] for i in range(0, len(data), BATCH_SIZE)]
+
+    for batch in progressbar.progressbar(batches, redirect_stdout=False):
+        for row in batch:
+            new_object = db_schema(**row) if isinstance(row, dict) else row
+            session.add(new_object)
+        session.commit()
 
 
 def create_or_update(session: Session, row: Dict, insertor: Insertor) -> SQLModel:
