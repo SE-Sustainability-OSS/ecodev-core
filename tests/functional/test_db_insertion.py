@@ -9,8 +9,10 @@ from fastapi import File
 from fastapi import status
 from fastapi import UploadFile
 from fastapi.testclient import TestClient
+from sqlmodel import Field
 from sqlmodel import select
 from sqlmodel import Session
+from sqlmodel import SQLModel
 
 from ecodev_core import AppUser
 from ecodev_core import attempt_to_log
@@ -27,8 +29,8 @@ from ecodev_core import select_user
 from ecodev_core import SimpleReturn
 from ecodev_core import upsert_app_users
 from ecodev_core.app_user import USER_INSERTOR
+from ecodev_core.db_insertion import insert_batch_data
 from ecodev_core.db_insertion import insert_file
-
 
 app = FastAPI()
 test_client = TestClient(app)
@@ -141,3 +143,43 @@ class DbInsertionTest(SafeTestCase):
                 test_client.post('/user-insert', files={'file': ('filename', f)},
                                  headers={'Authorization': f'Bearer {admin_token}'})
                 self.assertTrue(len(session.exec(select(AppUser)).all()) == 4)
+
+
+class InFoo(SQLModel, table=True):  # type: ignore
+    """
+    Test class to test DB insertion
+    """
+    __tablename__ = 'in_foo'
+    id: int | None = Field(default=None, primary_key=True)
+    bar1: int = Field()
+
+
+class BatchInsertorTest(SafeTestCase):
+    """
+    Class testing db batch insertion
+    """
+
+    def setUp(self):
+        """
+        Class set up
+        """
+        super().setUp()
+        create_db_and_tables(InFoo)
+        delete_table(InFoo)
+
+    def tearDown(self) -> None:
+        return super().tearDown()
+
+    def test_insert_batch_data(self):
+        """
+        Testing that the insert_batch_data function behaves as expected
+        """
+
+        data = [InFoo(bar1=1), InFoo(bar1=2), InFoo(bar1=3)]
+
+        with Session(engine) as session:
+            insert_batch_data(data, session)
+
+            db_data = session.exec(select(InFoo)).all()
+
+        self.assertEqual(len(db_data), 3)
