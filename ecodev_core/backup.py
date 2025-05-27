@@ -15,7 +15,7 @@ from pydantic_settings import SettingsConfigDict
 
 from ecodev_core.db_connection import DB_URL
 from ecodev_core.logger import logger_get
-
+from ecodev_core.settings import SETTINGS
 
 log = logger_get(__name__)
 
@@ -30,8 +30,11 @@ class BackUpSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env')
 
 
-BCK = BackUpSettings()
-BACKUP_URL = f'ftp://{BCK.backup_username}:{BCK.backup_password}@{BCK.backup_url}'
+BCK, SETTINGS_BCK = BackUpSettings(), SETTINGS.backup  # type: ignore[attr-defined]
+_USER = SETTINGS_BCK.backup_username or BCK.backup_username
+_PASSWD = SETTINGS_BCK.backup_password or BCK.backup_password
+_URL = SETTINGS_BCK.backup_url or BCK.backup_url
+BACKUP_URL = f'ftp://{_USER}:{_PASSWD}@{_URL}'
 
 
 def backup(backed_folder: Path, nb_saves: int = 5, additional_id: str = 'default') -> None:

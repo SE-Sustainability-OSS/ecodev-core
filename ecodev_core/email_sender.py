@@ -11,6 +11,8 @@ from ssl import create_default_context
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
+from ecodev_core.settings import SETTINGS
+
 
 class EmailAuth(BaseSettings):
     """
@@ -19,10 +21,15 @@ class EmailAuth(BaseSettings):
     email_smtp: str = ''
     email_sender: str = ''
     email_password: str = ''
+    email_port: int = 587
     model_config = SettingsConfigDict(env_file='.env')
 
 
-EMAIL_AUTH = EmailAuth()
+EMAIL_AUTH, EMAIL_SETTINGS = EmailAuth(), SETTINGS.smtp  # type: ignore[attr-defined]
+_SENDER = EMAIL_SETTINGS.email_sender or EMAIL_AUTH.email_sender
+_SMTP = EMAIL_SETTINGS.email_smtp or EMAIL_AUTH.email_smtp
+_PASSWD = EMAIL_SETTINGS.email_password or EMAIL_AUTH.email_password
+_PORT = EMAIL_SETTINGS.email_port or EMAIL_AUTH.email_port
 
 
 def send_email(email: str, body: str, topic: str, images: dict[str, Path] | None = None) -> None:
@@ -36,7 +43,7 @@ def send_email(email: str, body: str, topic: str, images: dict[str, Path] | None
         - images: if any, the Dict of image tags:image paths to incorporate in the email
     """
     em = MIMEMultipart('related')
-    em['From'] = EMAIL_AUTH.email_sender
+    em['From'] = _SENDER
     em['To'] = email
     em['Subject'] = topic
     em.attach(MIMEText(body, 'html'))
@@ -46,8 +53,8 @@ def send_email(email: str, body: str, topic: str, images: dict[str, Path] | None
         img.add_header('Content-ID', f'<{tag}>')
         em.attach(img)
 
-    with SMTP(EMAIL_AUTH.email_smtp, 587) as server:
+    with SMTP(_SMTP, _PORT) as server:
         server.ehlo()
         server.starttls(context=create_default_context())
-        server.login(EMAIL_AUTH.email_sender, EMAIL_AUTH.email_password)
-        server.sendmail(EMAIL_AUTH.email_sender, email, em.as_string())
+        server.login(_SENDER, _PASSWD)
+        server.sendmail(_SENDER, email, em.as_string())
