@@ -1,0 +1,30 @@
+---
+ authentication:
+   algorithm: null
+   access_token_expire_minutes: null
+   secret_key: null
+
+ database:
+   db_port: null
+   db_name: null
+   db_host: null
+   db_username: null
+   db_password: null
+
+ elastic_search:
+   port: null
+   host: null
+   user: null
+   password: null
+   index: null
+
+ backup:
+   backup_username: null
+   backup_password: null
+   backup_url: null
+
+ smtp:
+    email_smtp: null
+    email_port: null
+    email_sender: null
+    email_password: null

@@ -26,7 +26,9 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from ecodev_core.app_user import AppUser
-from ecodev_core.auth_configuration import AUTH
+from ecodev_core.auth_configuration import ALGO
+from ecodev_core.auth_configuration import EXPIRATION_LENGTH
+from ecodev_core.auth_configuration import SECRET_KEY
 from ecodev_core.db_connection import engine
 from ecodev_core.logger import logger_get
 from ecodev_core.permissions import Permission
@@ -235,11 +237,11 @@ def _create_access_token(data: Dict, tfa_value: Optional[str] = None) -> str:
     Create an access token out of the passed data. Only called if credentials are valid
     """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=AUTH.access_token_expire_minutes)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=EXPIRATION_LENGTH)
     to_encode['exp'] = expire
     if tfa_value:
         to_encode['tfa'] = _hash_password(tfa_value)
-    return jwt.encode(to_encode, AUTH.secret_key, algorithm=AUTH.algorithm)
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGO)
 
 
 def _verify_access_token(token: str,
@@ -249,7 +251,7 @@ def _verify_access_token(token: str,
     Retrieves the token data associated to the passed token if it contains valid credential info.
     """
     try:
-        payload = jwt.decode(token, AUTH.secret_key, algorithms=[AUTH.algorithm])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGO])
         if tfa_check and (not tfa_value or not _check_password(tfa_value, payload.get('tfa'))):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_TFA,
                                 headers={'WWW-Authenticate': 'Bearer'})

@@ -14,6 +14,7 @@ from sqlmodel import Session
 from sqlmodel import SQLModel
 
 from ecodev_core.logger import logger_get
+from ecodev_core.settings import SETTINGS
 
 log = logger_get(__name__)
 
@@ -30,9 +31,11 @@ class DbSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env')
 
 
-DB = DbSettings()
-_PASSWORD = quote(DB.db_password, safe='')
-DB_URL = f'postgresql://{DB.db_username}:{_PASSWORD}@{DB.db_host}:{DB.db_port}/{DB.db_name}'
+DB, SETTINGS_DB = DbSettings(), SETTINGS.database  # type: ignore[attr-defined]
+_PASSWORD = quote(SETTINGS_DB.db_password or DB.db_password, safe='')
+_USER, _HOST = SETTINGS_DB.db_username or DB.db_username, SETTINGS_DB.db_host or DB.db_host
+_PORT, _NAME = SETTINGS_DB.db_port or DB.db_port, SETTINGS_DB.db_name or DB.db_name
+DB_URL = f'postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{_NAME}'
 engine = create_engine(DB_URL)
 
 

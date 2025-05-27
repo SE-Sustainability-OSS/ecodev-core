@@ -51,6 +51,7 @@ jobs:
             -e app_port=8000
             -v ${{github.workspace}}/tests:/app/tests
             -v ${{github.workspace}}/ecodev_core:/app/app
+            -v ${{github.workspace}}/config:/app/config
             -v ${{github.workspace}}:/app/
             -v ${{github.workspace}}/.coveragerc:/app/.coveragerc
           run: |
