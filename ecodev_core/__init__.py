@@ -40,6 +40,7 @@ from ecodev_core.db_insertion import get_raw_df
 from ecodev_core.db_retrieval import count_rows
 from ecodev_core.db_retrieval import get_rows
 from ecodev_core.db_retrieval import ServerSideField
+from ecodev_core.db_upsertion import add_missing_enum_values
 from ecodev_core.db_upsertion import field
 from ecodev_core.db_upsertion import filter_to_sfield_dict
 from ecodev_core.db_upsertion import get_sfield_columns
@@ -107,4 +108,4 @@ __all__ = [
     'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment', 'Version',
     'sfield', 'field', 'upsert_df_data', 'upsert_deletor', 'get_row_versions', 'get_versions',
     'db_to_value', 'upsert_data', 'upsert_selector', 'get_sfield_columns', 'filter_to_sfield_dict',
-    'SETTINGS']
+    'SETTINGS', 'add_missing_enum_values']

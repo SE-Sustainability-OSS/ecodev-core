@@ -13,6 +13,7 @@ from sqlmodel import SQLModel
 from ecodev_core import create_db_and_tables
 from ecodev_core import db_to_value
 from ecodev_core import delete_table
+from ecodev_core import Deployment
 from ecodev_core import engine
 from ecodev_core import field
 from ecodev_core import first_or_default
@@ -25,8 +26,10 @@ from ecodev_core import upsert_data
 from ecodev_core import upsert_deletor
 from ecodev_core import upsert_df_data
 from ecodev_core import Version
-from ecodev_core.db_upsertion import get_sfield_columns
+from ecodev_core.db_upsertion import add_missing_enum_values
 from ecodev_core.db_upsertion import filter_to_sfield_dict
+from ecodev_core.db_upsertion import get_enum_values
+from ecodev_core.db_upsertion import get_sfield_columns
 
 
 class UpFoo(SQLModel, table=True):  # type: ignore
@@ -59,6 +62,17 @@ class UpsertorTest(SafeTestCase):
         create_db_and_tables(UpFoo)
         delete_table(UpFoo)
         delete_table(Version)
+
+    def test_enum_upsertor(self):
+        """
+        Test enum upsertion functionality
+        """
+        with Session(engine) as session:
+            n_perm, n_deploy = len(list(Permission)), len(list(Deployment))
+
+            self.assertEqual(len(get_enum_values(Permission, session)), n_perm)
+            add_missing_enum_values(Permission, session, list(Deployment))
+            self.assertEqual(len(get_enum_values(Permission, session)), n_perm+n_deploy)
 
     def test_upsertor(self):
         """
@@ -182,24 +196,23 @@ class UpsertorTest(SafeTestCase):
 
         self.assertEqual(len(foos), 1)
         self.assertEqual(len(get_row_versions('up_foo', foos[0].id, session)), 0)
-        
+
     def test_get_sfields(self):
         foo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
                     bar7=datetime(2025, 3, 17),
                     bar8=Permission.ADMIN)
-        
+
         columns = get_sfield_columns(UpFoo)
         self.assertEqual(columns, ['bar1', 'bar2'])
-        
+
         values = filter_to_sfield_dict(foo)
         self.assertEqual(values, {
             'bar1': 'bar',
             'bar2': True
         })
-        
+
         values1 = filter_to_sfield_dict(foo, UpFoo)
         self.assertEqual(values1, {
             'bar1': 'bar',
             'bar2': True
         })
-        
