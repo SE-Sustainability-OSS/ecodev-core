@@ -2,6 +2,7 @@
 Module handling CRUD and version operations
 """
 from datetime import datetime
+from enum import EnumType
 from functools import partial
 from typing import Any
 from typing import Union
@@ -14,6 +15,7 @@ from sqlmodel import inspect
 from sqlmodel import select
 from sqlmodel import Session
 from sqlmodel import SQLModel
+from sqlmodel import text
 from sqlmodel import update
 from sqlmodel.main import SQLModelMetaclass
 from sqlmodel.sql.expression import SelectOfScalar
@@ -25,6 +27,33 @@ BATCH_SIZE = 5000
 FILTER_ON = 'filter_on'
 INFO = 'info'
 SA_COLUMN_KWARGS = 'sa_column_kwargs'
+
+
+def add_missing_enum_values(enum: EnumType, session: Session, new_vals: list | None = None) -> None:
+    """
+    Add to an existing enum its missing db values. Do so by retrieving what is already in db, and
+    insert what is new.
+
+    NB: new_val argument is there for testing purposes
+    """
+
+    for val in [e.name for e in new_vals or enum if e.name not in get_enum_values(enum, session)]:
+        session.execute(text(f"ALTER TYPE {enum.__name__.lower()} ADD VALUE IF NOT EXISTS '{val}'"))
+        session.commit()
+
+
+def get_enum_values(enum: EnumType, session: Session) -> set[str]:
+    """
+    Return all enum values in db for the passed enum.
+    """
+    result = session.execute(text(
+        """
+        SELECT enumlabel FROM pg_enum
+        JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+        WHERE pg_type.typname = :enum_name
+        """
+    ), {'enum_name': enum.__name__.lower()})
+    return {x[0] for x in result}
 
 
 def sfield(**kwargs):
@@ -147,11 +176,11 @@ def get_sfield_columns(db_model: SQLModelMetaclass) -> list[str]:
         for x in inspect(db_model).c
         if x.info.get(FILTER_ON) is True
     ]
-    
-    
-def filter_to_sfield_dict(row: dict | SQLModelMetaclass, 
-                           db_schema: SQLModelMetaclass | None = None) \
-                              -> dict[str, dict | SQLModelMetaclass]:
+
+
+def filter_to_sfield_dict(row: dict | SQLModelMetaclass,
+                          db_schema: SQLModelMetaclass | None = None) \
+        -> dict[str, dict | SQLModelMetaclass]:
     """
     Returns a dict with only sfields from object
     Args:
@@ -162,4 +191,3 @@ def filter_to_sfield_dict(row: dict | SQLModelMetaclass,
     """
     return {pk: getattr(row, pk)
             for pk in get_sfield_columns(db_schema or row.__class__)}
-    
