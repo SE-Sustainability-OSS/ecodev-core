@@ -28,6 +28,7 @@ from ecodev_core.authentication import _create_access_token
 from ecodev_core.authentication import _hash_password
 from ecodev_core.authentication import _verify_access_token
 from ecodev_core.authentication import ADMIN_ERROR
+from ecodev_core.authentication import ban_token
 from ecodev_core.authentication import get_app_services
 from ecodev_core.authentication import get_current_user
 from ecodev_core.authentication import get_user
@@ -38,6 +39,7 @@ from ecodev_core.authentication import is_admin_user
 from ecodev_core.authentication import is_authorized_user
 from ecodev_core.authentication import JwtAuth
 from ecodev_core.authentication import MONITORING_ERROR
+from ecodev_core.authentication import REVOKED_TOKEN
 from ecodev_core.authentication import safe_get_user
 from ecodev_core.authentication import TokenData
 from ecodev_core.authentication import upsert_new_user
@@ -74,6 +76,23 @@ class AuthenticationTest(SafeTestCase):
         with Session(engine) as session:
             valid_token = get_access_token({'token': attempt_to_log('client', 'client', session)})
             self.assertTrue(len(valid_token) > 10)
+
+    def test_revoke_token(self):
+        """
+        Test the revoking token functionality
+        """
+        with Session(engine) as session:
+            token = attempt_to_log('monitoring', 'monitoring', session)
+            monito = is_monitoring_user(get_access_token({'token': token}))
+            self.assertEqual(monito.user, 'monitoring')
+
+            ban_token(get_access_token({'token': token}), session)
+
+            try:
+                wrong_monito = is_monitoring_user(get_access_token({'token': token}))
+            except HTTPException as e:
+                wrong_monito = e.detail
+            self.assertEqual(wrong_monito, REVOKED_TOKEN)
 
     def test_monitoring_user(self):
         """

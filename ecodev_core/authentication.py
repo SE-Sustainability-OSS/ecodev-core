@@ -33,7 +33,7 @@ from ecodev_core.db_connection import engine
 from ecodev_core.logger import logger_get
 from ecodev_core.permissions import Permission
 from ecodev_core.pydantic_utils import Frozen
-
+from ecodev_core.token_banlist import TokenBanlist
 
 SCHEME = OAuth2PasswordBearer(tokenUrl='login')
 auth_router = APIRouter(tags=['authentication'])
@@ -44,6 +44,7 @@ INVALID_USER = 'Invalid User'
 INVALID_TFA = 'Invalid TFA code'
 ADMIN_ERROR = 'Could not validate credentials. You need admin rights to call this'
 INVALID_CREDENTIALS = 'Invalid Credentials'
+REVOKED_TOKEN = 'This token has been revoked (by a logout action), please login again.'
 log = logger_get(__name__)
 
 
@@ -62,7 +63,7 @@ class TokenData(Frozen):
     id: int
 
 
-def get_access_token(token: Dict[str, Any]):
+def get_access_token(token: Dict[str, Any]) -> str | None:
     """
     Robust method to return access token or None
     """
@@ -158,6 +159,9 @@ def is_authorized_user(token: str = Depends(SCHEME)) -> bool:
     """
     Check if the passed token corresponds to an authorized user
     """
+    if _is_banned(token):
+        return False
+
     try:
         return get_current_user(token) is not None
     except Exception:
@@ -180,10 +184,36 @@ def get_user(token: str = Depends(SCHEME),
     """
     Retrieves (if it exists) the db user corresponding to the passed token
     """
+    if _is_banned(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=REVOKED_TOKEN,
+                            headers={'WWW-Authenticate': 'Bearer'})
     if user := get_current_user(token, tfa_value, tfa_check):
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_CREDENTIALS,
                         headers={'WWW-Authenticate': 'Bearer'})
+
+
+def ban_token(token: str, session: Session) -> None:
+    """
+    Ban the passed token
+    """
+    session.add(TokenBanlist(token=token))
+    session.commit()
+
+
+def _is_banned(token: str) -> bool:
+    """
+    Check if the passed token is banned.
+
+    NB: Clean the TokenBanlist table (deleting old entries) on the fly
+    """
+    with Session(engine) as session:
+        threshold = datetime.now() - timedelta(minutes=EXPIRATION_LENGTH)
+        for token_banned in session.exec(
+                select(TokenBanlist).where(TokenBanlist.created_at <= threshold)).all():
+            session.delete(token_banned)
+        session.commit()
+        return token in session.exec(select(TokenBanlist.token)).all()
 
 
 def get_current_user(token: str,
@@ -202,6 +232,10 @@ def is_admin_user(token: str = Depends(SCHEME)) -> AppUser:
     """
     Retrieves (if it exists) the admin (meaning who has valid credentials) user from the db
     """
+    if _is_banned(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=REVOKED_TOKEN,
+                            headers={'WWW-Authenticate': 'Bearer'})
+
     if (user := get_current_user(token)) and user.permission == Permission.ADMIN:
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ADMIN_ERROR,
@@ -212,6 +246,10 @@ def is_monitoring_user(token: str = Depends(SCHEME)) -> AppUser:
     """
     Retrieves (if it exists) the monitoring user from the db
     """
+    if _is_banned(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=REVOKED_TOKEN,
+                            headers={'WWW-Authenticate': 'Bearer'})
+
     if (user := get_current_user(token)) and user.user == MONITORING:
         return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
