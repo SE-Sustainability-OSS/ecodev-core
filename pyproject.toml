@@ -52,7 +52,7 @@ pandas = "~2"
 passlib = {version = "~1", extras = ["bcyrypt"]}
 progressbar2 = "^4.4.2"
 psycopg2-binary = "~2"
-pydantic = "2.9.2"
+pydantic = "2.11.7"
 pydantic-settings = "~2"
 python-jose = {version = "~3", extras = ["cryptography"]}
 pyyaml = "~6"
