@@ -159,7 +159,7 @@ def is_authorized_user(token: str = Depends(SCHEME)) -> bool:
     """
     Check if the passed token corresponds to an authorized user
     """
-    if _is_banned(token):
+    if is_banned(token):
         return False
 
     try:
@@ -184,7 +184,7 @@ def get_user(token: str = Depends(SCHEME),
     """
     Retrieves (if it exists) the db user corresponding to the passed token
     """
-    if _is_banned(token):
+    if is_banned(token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=REVOKED_TOKEN,
                             headers={'WWW-Authenticate': 'Bearer'})
     if user := get_current_user(token, tfa_value, tfa_check):
@@ -201,7 +201,7 @@ def ban_token(token: str, session: Session) -> None:
     session.commit()
 
 
-def _is_banned(token: str) -> bool:
+def is_banned(token: str) -> bool:
     """
     Check if the passed token is banned.
 
@@ -232,7 +232,7 @@ def is_admin_user(token: str = Depends(SCHEME)) -> AppUser:
     """
     Retrieves (if it exists) the admin (meaning who has valid credentials) user from the db
     """
-    if _is_banned(token):
+    if is_banned(token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=REVOKED_TOKEN,
                             headers={'WWW-Authenticate': 'Bearer'})
 
@@ -246,7 +246,7 @@ def is_monitoring_user(token: str = Depends(SCHEME)) -> AppUser:
     """
     Retrieves (if it exists) the monitoring user from the db
     """
-    if _is_banned(token):
+    if is_banned(token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=REVOKED_TOKEN,
                             headers={'WWW-Authenticate': 'Bearer'})
 
