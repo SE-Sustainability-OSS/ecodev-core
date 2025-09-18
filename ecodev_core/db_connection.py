@@ -36,7 +36,7 @@ _PASSWORD = quote(SETTINGS_DB.db_password or DB.db_password, safe='')
 _USER, _HOST = SETTINGS_DB.db_username or DB.db_username, SETTINGS_DB.db_host or DB.db_host
 _PORT, _NAME = SETTINGS_DB.db_port or DB.db_port, SETTINGS_DB.db_name or DB.db_name
 DB_URL = f'postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{_NAME}'
-engine = create_engine(DB_URL)
+engine = create_engine(DB_URL, pool_pre_ping=True)
 
 
 def create_db_and_tables(model: Callable, excluded_tables: Optional[List[str]] = None) -> None:
