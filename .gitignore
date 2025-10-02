@@ -21,3 +21,4 @@ data/
 db_data/
 #ignoring environment file
 .env
+.vscode

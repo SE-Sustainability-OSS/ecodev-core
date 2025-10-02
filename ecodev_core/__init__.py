@@ -37,11 +37,17 @@ from ecodev_core.db_connection import engine
 from ecodev_core.db_connection import get_session
 from ecodev_core.db_connection import info_message
 from ecodev_core.db_filters import ServerSideFilter
+from ecodev_core.db_i18n import get_lang
+from ecodev_core.db_i18n import I18nMixin
+from ecodev_core.db_i18n import Lang
+from ecodev_core.db_i18n import localized_col
+from ecodev_core.db_i18n import set_lang
 from ecodev_core.db_insertion import generic_insertion
 from ecodev_core.db_insertion import get_raw_df
 from ecodev_core.db_retrieval import count_rows
 from ecodev_core.db_retrieval import get_rows
 from ecodev_core.db_retrieval import ServerSideField
+from ecodev_core.db_upsertion import add_missing_columns
 from ecodev_core.db_upsertion import add_missing_enum_values
 from ecodev_core.db_upsertion import field
 from ecodev_core.db_upsertion import filter_to_sfield_dict
@@ -111,4 +117,5 @@ __all__ = [
     'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment', 'Version',
     'sfield', 'field', 'upsert_df_data', 'upsert_deletor', 'get_row_versions', 'get_versions',
     'db_to_value', 'upsert_data', 'upsert_selector', 'get_sfield_columns', 'filter_to_sfield_dict',
-    'SETTINGS', 'add_missing_enum_values', 'ban_token', 'TokenBanlist', 'is_banned']
+    'SETTINGS', 'add_missing_enum_values', 'ban_token', 'TokenBanlist', 'is_banned',
+    'get_lang', 'set_lang', 'Lang', 'localized_col', 'I18nMixin', 'add_missing_columns']
