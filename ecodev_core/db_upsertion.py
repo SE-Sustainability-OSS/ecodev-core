@@ -1,14 +1,21 @@
 """
 Module handling CRUD and version operations
 """
+import enum
+import json
+import types
 from datetime import datetime
 from enum import EnumType
 from functools import partial
 from typing import Any
+from typing import get_args
+from typing import get_origin
+from typing import Iterator
 from typing import Union
 
 import pandas as pd
 import progressbar
+from pydantic_core._pydantic_core import PydanticUndefined
 from sqlmodel import and_
 from sqlmodel import Field
 from sqlmodel import inspect
@@ -191,3 +198,185 @@ def filter_to_sfield_dict(row: dict | SQLModelMetaclass,
     """
     return {pk: getattr(row, pk)
             for pk in get_sfield_columns(db_schema or row.__class__)}
+
+
+def add_missing_columns(model: Any, session: Session) -> None:
+    """
+      Create all columns corresponding to fields in the passed model that are not yet columns in the
+     corresponding db table.
+
+    NB: The ORM not permitting to create new columns, we unfortunately have to rely on sqlalchemy
+     text sql statements.
+
+    NB2: As of 2025/10/01, handle the creation of int, float, str, bool, bytes, JSONB, Enum columns
+
+    NB3: possible to index columns, and to add foreign key.
+
+    NB4: Possible to have a non NULL default value
+    """
+    table = model.__tablename__
+    current_cols,  = get_existing_columns(table, session),
+    for col, py_type, fld in [(c, p, f) for c, p, f in _get_cols(model) if c not in current_cols]:
+        is_null = _is_type_nullable(py_type)
+        default = _get_default_value(fld, is_null)
+        _add_column(table, col, _py_type_to_sql(_clean_py_type(py_type)), default, is_null, session)
+        if getattr(fld, 'index', False):
+            _add_index(table, col, session)
+        if isinstance((fk := getattr(fld, 'foreign_key', None)), str) and fk.strip():
+            _add_foreign_key(f"{fk.split('.')[0]}(id)", table, col, session)
+        session.commit()
+
+
+def _get_default_value(fld: Any, nullable: bool) -> Any:
+    """
+    Find if any the field default value
+    """
+    if not nullable and hasattr(fld, 'default') and fld.default is not None:
+        return fld.default
+    return None
+
+
+def _add_column(table: str,
+                col: str,
+                sql_type: str,
+                default: Any,
+                nullable: bool,
+                session: Session
+                ) -> None:
+    """
+     Add the new column with sql_type to the passed table
+    """
+    session.execute(text(f'ALTER TABLE {table} ADD COLUMN {col} {sql_type} '
+                         f'{_get_additional_request(col, sql_type, default, nullable)}'))
+
+
+def _get_additional_request(col: str, sql_type: str, default_value: Any, nullable: bool) -> str:
+    """
+    Add if any the default value for the passed col.
+    """
+    if nullable:
+        return 'NULL'
+
+    if default_value is not None:
+        if (default_sql := _python_default_to_sql(default_value, sql_type)) == 'NULL':
+            raise ValueError(f'Non-nullable column {col} requires a default_value')
+        return f'DEFAULT {default_sql} NOT NULL'
+
+    raise ValueError(f'Non-nullable column {col} requires a default_value')
+
+
+def _add_index(table: str, col: str, session: Session):
+    """
+    Index the new table column
+    """
+    session.execute(text(f'CREATE INDEX IF NOT EXISTS ix_{table}_{col} ON {table} ({col})'))
+
+
+def _add_foreign_key(fk: str, table: str, col: str, session: Session):
+    """
+    Add a fk foreign key on the passed table column
+    """
+    session.execute(text(
+        f'ALTER TABLE {table} ADD CONSTRAINT fk_{table}_{col} FOREIGN KEY ({col}) REFERENCES {fk}'))
+
+
+def _get_cols(model: Any) -> Iterator[tuple[str, Any, Any]]:
+    """
+    Retrieve all fields and their corresponding sql types from the passed model
+    """
+    for col, field in model.model_fields.items():
+        if (col_type := getattr(field, 'annotation', None)) is not None:
+            yield col, col_type, field
+
+
+def get_existing_columns(table_name: str, session: Session) -> set[str]:
+    """
+    Retrieve all column names from the passed table
+    """
+    result = session.execute(text('SELECT column_name FROM information_schema.columns WHERE '
+                                  'table_name = :table_name'), {'table_name': table_name})
+    return {r[0] for r in result}
+
+
+def _clean_py_type(col_type: Any) -> Any:
+    """
+    Convert union and optional types to their non-None types, return directly passed type otherwise.
+    - Handle Python 3.10+ UnionType (aka X | Y)
+    - Unpack Optional types (Union[X, NoneType])
+    """
+    if isinstance(col_type, types.UnionType):
+        if len((args := [t for t in col_type.__args__ if t is not type(None)])) == 1:
+            return args[0]
+
+    if get_origin(col_type) is Union:
+        if len((args := [t for t in get_args(col_type) if t is not type(None)])) == 1:
+            return args[0]
+
+    return col_type
+
+
+def _is_type_nullable(col_type: Any) -> bool:
+    """
+    Return True if col_type is Optional or Union[..., None].
+    """
+    if isinstance(col_type, types.UnionType):
+        return type(None) in col_type.__args__
+
+    if get_origin(col_type) is Union:
+        return type(None) in get_args(col_type)
+
+    return col_type is type(None)
+
+
+def _python_default_to_sql(value: Any, sql_type: str) -> str:
+    """
+    Convert Python default to SQL literal, handling common types.
+    """
+    if value is None or value == PydanticUndefined:
+        return 'NULL'
+    if sql_type in ('VARCHAR', 'TEXT', 'CHAR'):
+        safe_value = value.replace("'", "''")
+        return f"'{safe_value}'"
+    if sql_type in ('INTEGER', 'FLOAT', 'NUMERIC', 'DOUBLE PRECISION'):
+        return str(value)
+    if sql_type == 'BOOLEAN':
+        return 'TRUE' if value else 'FALSE'
+    if sql_type == 'BYTEA':
+        if isinstance(value, bytes):
+            return f"decode('{value.hex()}', 'hex')"
+        raise ValueError('Default for BYTEA must be bytes')
+    if sql_type == 'JSONB':
+        json_str = json.dumps(value).replace("'", "''")
+        return f"'{json_str}'::jsonb"
+    if isinstance(value, enum.Enum):
+        return f"'{str(value.name)}'"
+    return str(value)
+
+
+def _py_type_to_sql(col_type: type) -> str:
+    """
+    Convert a python type to a sql one. Only working for (as of 2025/10/01):
+    - int
+    - float
+    - str
+    - bool
+    - bytes
+    - jsonB
+    - Enum
+    NB: for enum, assumes type is already created in DB
+    """
+    if col_type is str:
+        return 'VARCHAR'
+    if col_type is int:
+        return 'INTEGER'
+    if col_type is float:
+        return 'FLOAT'
+    if col_type is bool:
+        return 'BOOLEAN'
+    if col_type is bytes:
+        return 'BYTEA'
+    if col_type is dict:
+        return 'JSONB'
+    if hasattr(col_type, '__members__'):
+        return col_type.__name__.lower()
+    raise ValueError(f'Unsupported column type: {col_type}')
