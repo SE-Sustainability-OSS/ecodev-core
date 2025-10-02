@@ -5,7 +5,9 @@ from datetime import datetime
 from typing import Optional
 
 import pandas as pd
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field
+from sqlmodel import inspect
 from sqlmodel import select
 from sqlmodel import Session
 from sqlmodel import SQLModel
@@ -26,9 +28,11 @@ from ecodev_core import upsert_data
 from ecodev_core import upsert_deletor
 from ecodev_core import upsert_df_data
 from ecodev_core import Version
+from ecodev_core.db_upsertion import add_missing_columns
 from ecodev_core.db_upsertion import add_missing_enum_values
 from ecodev_core.db_upsertion import filter_to_sfield_dict
 from ecodev_core.db_upsertion import get_enum_values
+from ecodev_core.db_upsertion import get_existing_columns
 from ecodev_core.db_upsertion import get_sfield_columns
 
 
@@ -49,6 +53,49 @@ class UpFoo(SQLModel, table=True):  # type: ignore
     bar9: Optional[str] = field(default=None)
 
 
+NEW_FIELDS = {
+    'bar10': (Optional[int], Field(default=None)),
+    'bar100': (int, Field(default=0)),
+    'bar11': (float | None, Field(default=None)),
+    'bar110': (float, Field(default=0.0)),
+    'bar12': (str, Field(default='toto')),
+    'bar120': (Optional[str], Field(default=None)),
+    'bar13': (Permission, Field(default=Permission.Client)),
+    'bar130': (Optional[Permission], Field(default=None)),
+    'bar14': (Optional[int], Field(default=None, index=True, foreign_key='app_user.id')),
+    'bar15': (bool, Field(default=True)),
+    'bar150': (Optional[bool], Field(default=None)),
+    'bar16': (bytes, Field(default=b'toto')),
+    'bar160': (Optional[bytes], Field(default=None)),
+    'bar17': (dict, Field(sa_type=JSONB, default={'key': 'toto'})),
+    'bar170': (Optional[dict], Field(sa_type=JSONB))
+}
+
+
+def _create_dynamic_class():
+    """
+    There is no simple way to dynamically add new fields to UpFoo, we thus create a new UpFooDynamic
+     class that mimics UpFoo with 4 new fields
+
+    NB: Dynamically create new SQLModel with table=True in __config__ to avoid PydanticUserError
+    """
+    annotations = dict(UpFoo.__annotations__)
+    attrs = {k: getattr(UpFoo, k) for k in annotations.keys()}
+
+    for key, (typ, fld) in NEW_FIELDS.items():
+        annotations[key] = typ
+        attrs[key] = fld
+
+    return type('UpFooDynamic', (SQLModel,),
+                {
+        '__tablename__': UpFoo.__tablename__,
+        '__annotations__': annotations,
+        '__config__': type('Config', (), {'orm_mode': True, 'table': True}),
+        **attrs,
+        '__module__': UpFoo.__module__,
+    })
+
+
 class UpsertorTest(SafeTestCase):
     """
     Class testing db upsertion
@@ -62,6 +109,26 @@ class UpsertorTest(SafeTestCase):
         create_db_and_tables(UpFoo)
         delete_table(UpFoo)
         delete_table(Version)
+
+    def test_class_upsertor(self):
+        """
+        Test class upsertion functionality
+
+        - Check indexes on the table
+        - Check foreign keys on the table
+        """
+        with Session(engine) as session:
+            for col in NEW_FIELDS.keys():
+                self.assertFalse(col in get_existing_columns(UpFoo.__tablename__, session))
+            add_missing_columns(_create_dynamic_class(), session)
+            for col in NEW_FIELDS.keys():
+                self.assertTrue(col in get_existing_columns(UpFoo.__tablename__, session))
+
+            inspector = inspect(session.get_bind())
+            indexes = inspector.get_indexes(UpFoo.__tablename__)
+            self.assertTrue(any('bar14' in idx.get('column_names', []) for idx in indexes))
+            fkeys = inspector.get_foreign_keys(UpFoo.__tablename__)
+            self.assertIn('bar14', {fk['constrained_columns'][0] for fk in fkeys})
 
     def test_enum_upsertor(self):
         """
