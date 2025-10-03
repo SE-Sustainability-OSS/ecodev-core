@@ -59,6 +59,8 @@ from ecodev_core.db_upsertion import upsert_df_data
 from ecodev_core.db_upsertion import upsert_selector
 from ecodev_core.deployment import Deployment
 from ecodev_core.email_sender import send_email
+from ecodev_core.encryption import decrypt_value
+from ecodev_core.encryption import encrypt_value
 from ecodev_core.enum_utils import enum_converter
 from ecodev_core.list_utils import first_func_or_default
 from ecodev_core.list_utils import first_or_default
@@ -118,4 +120,5 @@ __all__ = [
     'sfield', 'field', 'upsert_df_data', 'upsert_deletor', 'get_row_versions', 'get_versions',
     'db_to_value', 'upsert_data', 'upsert_selector', 'get_sfield_columns', 'filter_to_sfield_dict',
     'SETTINGS', 'add_missing_enum_values', 'ban_token', 'TokenBanlist', 'is_banned',
-    'get_lang', 'set_lang', 'Lang', 'localized_col', 'I18nMixin', 'add_missing_columns']
+    'get_lang', 'set_lang', 'Lang', 'localized_col', 'I18nMixin', 'add_missing_columns',
+    'encrypt_value', 'decrypt_value']
