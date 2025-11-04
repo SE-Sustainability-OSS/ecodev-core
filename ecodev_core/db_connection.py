@@ -9,6 +9,7 @@ from urllib.parse import quote
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 from sqlalchemy import delete
+from sqlalchemy import text
 from sqlmodel import create_engine
 from sqlmodel import Session
 from sqlmodel import SQLModel
@@ -28,6 +29,7 @@ class DbSettings(BaseSettings):
     db_name: str = ''
     db_username: str = ''
     db_password: str = ''
+    db_test_name: str = ''
     model_config = SettingsConfigDict(env_file='.env')
 
 
@@ -36,7 +38,21 @@ _PASSWORD = quote(SETTINGS_DB.db_password or DB.db_password, safe='')
 _USER, _HOST = SETTINGS_DB.db_username or DB.db_username, SETTINGS_DB.db_host or DB.db_host
 _PORT, _NAME = SETTINGS_DB.db_port or DB.db_port, SETTINGS_DB.db_name or DB.db_name
 DB_URL = f'postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{_NAME}'
+TEST_DB = SETTINGS_DB.db_test_name or DB.db_test_name
+TEST_DB_URL = f'postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{TEST_DB}'
+_ADMIN_DB_URL = f'postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/postgres'
 engine = create_engine(DB_URL, pool_pre_ping=True)
+
+
+def exec_admin_queries(queries: list[str]) -> None:
+    """
+    execute sequentially queries from the admin db
+    """
+    admin_engine = create_engine(_ADMIN_DB_URL, isolation_level='AUTOCOMMIT')
+    with admin_engine.connect() as conn:
+        for query in queries:
+            conn.execute(text(query))
+    admin_engine.dispose()
 
 
 def create_db_and_tables(model: Callable, excluded_tables: Optional[List[str]] = None) -> None:
