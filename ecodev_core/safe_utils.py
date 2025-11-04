@@ -15,7 +15,13 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 from pydantic import Field
+from sqlalchemy import Engine
+from sqlmodel import create_engine
+from sqlmodel import SQLModel
 
+from ecodev_core.db_connection import exec_admin_queries
+from ecodev_core.db_connection import TEST_DB
+from ecodev_core.db_connection import TEST_DB_URL
 from ecodev_core.logger import log_critical
 from ecodev_core.logger import logger_get
 from ecodev_core.pydantic_utils import Frozen
@@ -31,6 +37,7 @@ class SafeTestCase(TestCase):
     """
     files_created: List[Path]
     directories_created: List[Path]
+    test_engine: Engine
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -58,6 +65,9 @@ class SafeTestCase(TestCase):
         log.debug(f'Running test: {self._testMethodName.upper()}')
         self.directories_created: List[Path] = []
         self.files_created: List[Path] = []
+        exec_admin_queries([f'CREATE DATABASE {TEST_DB}'])
+        self.test_engine = create_engine(TEST_DB_URL, pool_pre_ping=True)
+        SQLModel.metadata.create_all(self.test_engine)
 
     def tearDown(self) -> None:
         """
@@ -65,6 +75,10 @@ class SafeTestCase(TestCase):
         """
         log.debug(f'Done running test: {self._testMethodName.upper()}')
         self.safe_delete(self.directories_created, self.files_created)
+        exec_admin_queries([
+            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{TEST_DB}'",
+            f'DROP DATABASE IF EXISTS {TEST_DB}'
+        ])
 
     @classmethod
     def safe_delete(cls, directories_created: List[Path], files_created: List[Path]) -> None:

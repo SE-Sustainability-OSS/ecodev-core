@@ -46,6 +46,7 @@ jobs:
             -e app_password=postgres
             -e db_host=postgres
             -e db_name=postgres
+            -e db_test_name=test_db
             -e fernet_key=3333333333333333333333333333333333333333333=
             -e db_port=${{ job.services.postgres.ports[5432] }}
             -e secret_key=totototototototototototototototototototo

@@ -10,6 +10,7 @@
    db_host: null
    db_username: null
    db_password: null
+   db_test_name: null
 
  elastic_search:
    port: null
