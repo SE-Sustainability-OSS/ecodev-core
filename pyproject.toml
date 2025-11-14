@@ -61,7 +61,7 @@ sqlmodel = "~0"
 uvicorn = "0.28.1"
 xlsxwriter = "~3"
 cryptography = "~46"
-
+requests = "~2"
 
 [build-system]
 requires = ["poetry-core"]
