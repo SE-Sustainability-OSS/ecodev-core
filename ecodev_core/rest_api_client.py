@@ -23,7 +23,7 @@ API_PASSWORD = SETTINGS.api.password
 
 class RestApiClient(BaseModel):
     """
-    Client for making calls to ecoact apps REST API endpoints.
+    Client for making calls to internal REST API endpoints.
 
     Attributes:
         timeout (int): HTTP connection timeout 30 (sec).
@@ -38,13 +38,13 @@ class RestApiClient(BaseModel):
 
     def _get_new_token(self) -> dict:
         """
-        Fetches the authentication token from ecoact-auth login API.
+        Fetches the authentication token from login API.
 
         Raises:
             ConnectionRefusedError: If the request returned None
 
         Returns:
-            dict: The authentication token response from the ecoact-auth login API.
+            dict: The authentication token response from login API.
         """
         if (data := handle_response(requests.post(f'{LOGIN_URL}',
                                                   data={'username': API_USER,
@@ -82,10 +82,10 @@ class RestApiClient(BaseModel):
     def _get_header(self) -> dict:
         """
         Returns the headers with authorization information for
-        HTTP requests to ecoact apps REST APIs.
+        HTTP requests to internal REST APIs.
 
         Returns:
-            dict: HTTP request headers ecoact apps REST APIs.
+            dict: HTTP request headers internal REST APIs.
         """
         return {'accept': 'application/json',
                 'Content-Type': 'application/json',
