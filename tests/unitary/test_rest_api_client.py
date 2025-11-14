@@ -3,11 +3,16 @@ Module testing the package's rest api client
 """
 from datetime import datetime
 from datetime import timezone
+from unittest.mock import MagicMock
+from unittest.mock import PropertyMock
 from unittest.mock import patch
 
+import requests
+
 from ecodev_core import SafeTestCase
-import ecodev_core.rest_api_client as rac
 from ecodev_core import get_rest_api_client
+import ecodev_core.rest_api_client as rac
+from ecodev_core import handle_response
 
 
 class RestApiClientFactoryTest(SafeTestCase):
@@ -126,3 +131,88 @@ class RestApiClientTokenTest(SafeTestCase):
 
         self.assertEqual(exp, expected_timestamp)
         patched_decode.assert_called_once_with()
+
+
+class RestApiClientRequestTest(SafeTestCase):
+    """
+    Test suite checking HTTP helpers invoke header generation
+    """
+    def tearDown(self):
+        """
+        Ensure cached client cleared after each test
+        """
+        super().tearDown()
+        rac.REST_API_CLIENT = None
+
+    def test_get_header_uses_token_property_for_authorization(self):
+        """
+        Ensure Authorization header uses token property value
+        """
+        client = get_rest_api_client()
+
+        with patch.object(rac.RestApiClient, 'token', new_callable=PropertyMock) as token_property:
+            token_property.return_value = {'access_token': 'header-token'}
+            headers = client._get_header()
+
+        self.assertEqual(headers['Authorization'], 'Bearer header-token')
+        token_property.assert_called_once_with(client)
+
+    def test_http_methods_fetch_headers_before_request(self):
+        """
+        Ensure each HTTP method adds headers by calling _get_header
+        """
+        client = get_rest_api_client()
+        expected_headers = {'Authorization': 'Bearer header-token'}
+        http_methods = [
+            ('get', {'url': 'http://example.com', 'params': {'a': 1}}),
+            ('post', {'url': 'http://example.com', 'data': {'x': 1}, 'params': {'b': 2}}),
+            ('put', {'url': 'http://example.com', 'data': {'x': 2}, 'params': {'c': 3}}),
+            ('patch', {'url': 'http://example.com', 'data': {'x': 3}, 'params': {'d': 4}}),
+            ('delete', {'url': 'http://example.com', 'params': {'e': 5}}),
+            ]
+
+        for method_name, kwargs in http_methods:
+            with self.subTest(method=method_name):
+                with patch.object(client, '_get_header', return_value=expected_headers) as header_mock, \
+                        patch('ecodev_core.rest_api_client.requests') as requests_module, \
+                        patch('ecodev_core.rest_api_client.handle_response'):
+                    request_callable = getattr(requests_module, method_name)
+                    getattr(client, method_name)(**kwargs)
+
+                header_mock.assert_called_once_with()
+                request_callable.assert_called_once()
+                self.assertEqual(request_callable.call_args.kwargs['headers'], expected_headers)
+
+    def test_handle_response_returns_json_payload(self):
+        """
+        Ensure handle_response returns JSON body when request succeeds
+        """
+        response = MagicMock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = {'data': True}
+
+        payload = handle_response(response)
+
+        self.assertEqual(payload, {'data': True})
+        response.raise_for_status.assert_called_once_with()
+
+    def test_handle_response_raises_http_error(self):
+        """
+        Ensure HTTP errors are logged and re-raised
+        """
+        response = MagicMock(status_code=500, text='error')
+        response.raise_for_status.side_effect = requests.HTTPError('server error')
+
+        with self.assertRaises(requests.HTTPError):
+            handle_response(response)
+
+    def test_handle_response_raises_on_json_parsing_failure(self):
+        """
+        Ensure JSON parsing failures are logged and propagated
+        """
+        response = MagicMock()
+        response.raise_for_status.return_value = None
+        response.json.side_effect = ValueError('bad json')
+
+        with self.assertRaises(ValueError):
+            rac.handle_response(response)
