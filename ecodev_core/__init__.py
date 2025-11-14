@@ -105,6 +105,7 @@ from ecodev_core.version import get_versions
 from ecodev_core.version import Version
 from ecodev_core.rest_api_client import get_rest_api_client
 from ecodev_core.rest_api_client import RestApiClient
+from ecodev_core.rest_api_client import handle_response
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
     'write_json_file', 'load_json_file', 'make_dir', 'check_dependencies', 'compute_dependencies',
@@ -123,4 +124,4 @@ __all__ = [
     'db_to_value', 'upsert_data', 'upsert_selector', 'get_sfield_columns', 'filter_to_sfield_dict',
     'SETTINGS', 'add_missing_enum_values', 'ban_token', 'TokenBanlist', 'is_banned',
     'get_lang', 'set_lang', 'Lang', 'localized_col', 'I18nMixin', 'add_missing_columns',
-    'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient']
+    'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient', 'handle_response']
