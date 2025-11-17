@@ -12,13 +12,11 @@ from ecodev_core.authentication import ALGO
 from ecodev_core.authentication import SECRET_KEY
 from jose import jwt
 from pydantic import BaseModel
-
+from ecodev_core.rest_api_configuration import LOGIN_URL
+from ecodev_core.rest_api_configuration import API_USER
+from ecodev_core.rest_api_configuration import API_PASSWORD
 
 log = logger_get(__name__)
-
-LOGIN_URL = SETTINGS.api.host + '/login'
-API_USER = SETTINGS.api.user
-API_PASSWORD = SETTINGS.api.password
 
 
 class RestApiClient(BaseModel):
