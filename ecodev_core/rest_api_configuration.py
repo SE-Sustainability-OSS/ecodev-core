@@ -12,8 +12,8 @@ class RestApiConfiguration(BaseSettings):
     Simple authentication configuration class
     """
     host: str = ''
-    user: str
-    password: str
+    user: str = ''
+    password: str = ''
     model_config = SettingsConfigDict(env_file='.env')
 
 
