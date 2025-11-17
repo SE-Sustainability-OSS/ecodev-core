@@ -6,15 +6,15 @@ from datetime import timezone
 from typing import Optional
 
 import requests
-from ecodev_core import logger_get
-from ecodev_core import SETTINGS
-from ecodev_core.authentication import ALGO
-from ecodev_core.authentication import SECRET_KEY
 from jose import jwt
 from pydantic import BaseModel
-from ecodev_core.rest_api_configuration import LOGIN_URL
-from ecodev_core.rest_api_configuration import API_USER
+
+from ecodev_core import logger_get
+from ecodev_core.authentication import ALGO
+from ecodev_core.authentication import SECRET_KEY
 from ecodev_core.rest_api_configuration import API_PASSWORD
+from ecodev_core.rest_api_configuration import API_USER
+from ecodev_core.rest_api_configuration import LOGIN_URL
 
 log = logger_get(__name__)
 
