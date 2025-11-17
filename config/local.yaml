@@ -30,4 +30,9 @@
     email_sender: null
     email_password: null
 
+ api:
+    user: null
+    host: null
+    password: null
+
  fernet_key: null

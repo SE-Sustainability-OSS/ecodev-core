@@ -63,8 +63,11 @@ def _backup_db(db_dump_path: Path, nb_saves: int) -> None:
     """
     process = Popen(['pg_dump', f'--dbname={DB_URL}', '-f', db_dump_path.name],
                     stdout=PIPE, stderr=STDOUT, cwd=db_dump_path.parent)
-    if not (process.communicate()[0]):
+    if not (process_output := process.communicate()[0]):
         _backup_content(db_dump_path, nb_saves)
+    else:
+        log.critical(f'something went wrong : {process_output}')
+
 
 
 def _backup_files(backed_folder: Path, backup_file: Path, nb_saves: int) -> None:
