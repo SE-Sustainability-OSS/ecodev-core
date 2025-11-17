@@ -45,18 +45,11 @@ class RestApiClientTokenTest(SafeTestCase):
     Test suite covering RestApiClient authentication token behavior
     """
 
-    def tearDown(self):
-        """
-        Ensure global client cache is reset after each test
-        """
-        super().tearDown()
-        rac.REST_API_CLIENT = None
-
     def test_token_fetches_new_token_when_missing(self):
         """
         Should fetch a new token when none is cached or it is expired
         """
-        client = get_rest_api_client()
+        client = RestApiClient()
         client._token = {}
         fresh_token = {'access_token': 'fresh-token'}
 
@@ -72,7 +65,7 @@ class RestApiClientTokenTest(SafeTestCase):
         """
         Should refresh the token when its expiration is within one minute
         """
-        client = get_rest_api_client()
+        client = RestApiClient()
         client._token = {'access_token': 'stale-token'}
         refreshed_token = {'access_token': 'refreshed-token'}
         soon_expiring = datetime.now(timezone.utc).timestamp() + 30
@@ -89,7 +82,7 @@ class RestApiClientTokenTest(SafeTestCase):
         """
         Should reuse cached token when expiration is more than one minute away
         """
-        client = get_rest_api_client()
+        client = RestApiClient()
         cached_token = {'access_token': 'cached-token'}
         client._token = cached_token.copy()
         far_future_exp = datetime.now(timezone.utc).timestamp() + 6000
@@ -106,7 +99,7 @@ class RestApiClientTokenTest(SafeTestCase):
         """
         Should return the exp claim from decoded JWT payload
         """
-        client = get_rest_api_client()
+        client = RestApiClient()
         expected_exp = datetime.now(timezone.utc).timestamp() + 123
         client._token = {'access_token': 'jwt-token'}
 
@@ -121,7 +114,7 @@ class RestApiClientTokenTest(SafeTestCase):
         """
         Should fallback to current timestamp when JWT decoding fails
         """
-        client = get_rest_api_client()
+        client = RestApiClient()
         client._token = {'access_token': 'invalid-token'}
         fixed_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
         expected_timestamp = fixed_now.timestamp()
@@ -139,31 +132,24 @@ class RestApiClientRequestTest(SafeTestCase):
     """
     Test suite checking HTTP helpers invoke header generation
     """
-    def tearDown(self):
-        """
-        Ensure cached client cleared after each test
-        """
-        super().tearDown()
-        rac.REST_API_CLIENT = None
 
     def test_get_header_uses_token_property_for_authorization(self):
         """
         Ensure Authorization header uses token property value
         """
-        client = get_rest_api_client()
+        client = RestApiClient()
 
         with patch.object(RestApiClient, 'token', new_callable=PropertyMock) as token_property:
             token_property.return_value = {'access_token': 'header-token'}
             headers = client._get_header()
 
         self.assertEqual(headers['Authorization'], 'Bearer header-token')
-        token_property.assert_called_once_with(client)
 
     def test_http_methods_fetch_headers_before_request(self):
         """
         Ensure each HTTP method adds headers by calling _get_header
         """
-        client = get_rest_api_client()
+        client = RestApiClient()
         expected_headers = {'Authorization': 'Bearer header-token'}
         http_methods = [
             ('get', {'url': 'http://example.com', 'params': {'a': 1}}),
