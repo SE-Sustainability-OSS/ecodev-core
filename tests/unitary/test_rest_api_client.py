@@ -9,10 +9,12 @@ from unittest.mock import patch
 
 import requests
 
-from ecodev_core import SafeTestCase
+from ecodev_core import RestApiClient, SafeTestCase
 from ecodev_core import get_rest_api_client
-import ecodev_core.rest_api_client as rac
 from ecodev_core import handle_response
+from ecodev_core.auth_configuration import ALGO
+from ecodev_core.auth_configuration import SECRET_KEY
+import ecodev_core.rest_api_client as rac
 
 
 class RestApiClientFactoryTest(SafeTestCase):
@@ -31,10 +33,10 @@ class RestApiClientFactoryTest(SafeTestCase):
         """
         Ensure factory returns the same RestApiClient instance across calls
         """
-        first_client = rac.get_rest_api_client()
-        second_client = rac.get_rest_api_client()
+        first_client = get_rest_api_client()
+        second_client = get_rest_api_client()
 
-        self.assertIsInstance(first_client, rac.RestApiClient)
+        self.assertIsInstance(first_client, RestApiClient)
         self.assertIs(first_client, second_client)
 
 
@@ -112,7 +114,7 @@ class RestApiClientTokenTest(SafeTestCase):
             exp = client.get_exp()
 
         self.assertEqual(exp, expected_exp)
-        patched_decode.assert_called_once_with('jwt-token', rac.SECRET_KEY, algorithms=[rac.ALGO])
+        patched_decode.assert_called_once_with('jwt-token', SECRET_KEY, algorithms=[ALGO])
 
 
     def test_get_exp_falls_back_to_current_timestamp_on_decode_failure(self):
@@ -150,7 +152,7 @@ class RestApiClientRequestTest(SafeTestCase):
         """
         client = get_rest_api_client()
 
-        with patch.object(rac.RestApiClient, 'token', new_callable=PropertyMock) as token_property:
+        with patch.object(RestApiClient, 'token', new_callable=PropertyMock) as token_property:
             token_property.return_value = {'access_token': 'header-token'}
             headers = client._get_header()
 
