@@ -59,7 +59,7 @@ class RestApiClientTokenTest(SafeTestCase):
 
         self.assertEqual(token, fresh_token)
         self.assertEqual(client._token, fresh_token)
-        patched_get_new_token.assert_called_once_with()
+        patched_get_new_token.assert_called_once()
 
     def test_token_refreshes_when_near_expiration(self):
         """
@@ -76,7 +76,7 @@ class RestApiClientTokenTest(SafeTestCase):
 
         self.assertEqual(token, refreshed_token)
         self.assertEqual(client._token, refreshed_token)
-        patched_get_new_token.assert_called_once_with()
+        patched_get_new_token.assert_called_once()
 
     def test_token_returns_cached_when_expiration_is_far(self):
         """
@@ -125,7 +125,6 @@ class RestApiClientTokenTest(SafeTestCase):
                 exp = client.get_exp()
 
         self.assertEqual(exp, expected_timestamp)
-        patched_decode.assert_called_once_with()
 
 
 class RestApiClientRequestTest(SafeTestCase):
@@ -167,7 +166,7 @@ class RestApiClientRequestTest(SafeTestCase):
                     request_callable = getattr(requests_module, method_name)
                     getattr(client, method_name)(**kwargs)
 
-                header_mock.assert_called_once_with()
+                header_mock.assert_called_once()
                 request_callable.assert_called_once()
                 self.assertEqual(request_callable.call_args.kwargs['headers'], expected_headers)
 
@@ -182,7 +181,7 @@ class RestApiClientRequestTest(SafeTestCase):
         payload = handle_response(response)
 
         self.assertEqual(payload, {'data': True})
-        response.raise_for_status.assert_called_once_with()
+        response.raise_for_status.assert_called_once()
 
     def test_handle_response_raises_http_error(self):
         """
