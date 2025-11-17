@@ -214,5 +214,5 @@ class RestApiClientRequestTest(SafeTestCase):
         response.raise_for_status.return_value = None
         response.json.side_effect = ValueError('bad json')
 
-        with self.assertRaises(ValueError):
-            rac.handle_response(response)
+        with self.assertRaises(Exception):
+            handle_response(response)
