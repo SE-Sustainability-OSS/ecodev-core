@@ -9,7 +9,8 @@ from unittest.mock import patch
 
 import requests
 
-from ecodev_core import RestApiClient, SafeTestCase
+from ecodev_core import RestApiClient
+from ecodev_core import  SafeTestCase
 from ecodev_core import get_rest_api_client
 from ecodev_core import handle_response
 from ecodev_core.auth_configuration import ALGO
@@ -53,8 +54,8 @@ class RestApiClientTokenTest(SafeTestCase):
         client._token = {}
         fresh_token = {'access_token': 'fresh-token'}
 
-        with patch.object(client, '_get_new_token', return_value=fresh_token) as patched_get_new_token:
-            with patch.object(client, 'get_exp', return_value=0):
+        with patch.object(RestApiClient, '_get_new_token', return_value=fresh_token) as patched_get_new_token:
+            with patch.object(RestApiClient, 'get_exp', return_value=0):
                 token = client.token
 
         self.assertEqual(token, fresh_token)
@@ -70,8 +71,8 @@ class RestApiClientTokenTest(SafeTestCase):
         refreshed_token = {'access_token': 'refreshed-token'}
         soon_expiring = datetime.now(timezone.utc).timestamp() + 30
 
-        with patch.object(client, 'get_exp', return_value=soon_expiring):
-            with patch.object(client, '_get_new_token', return_value=refreshed_token) as patched_get_new_token:
+        with patch.object(RestApiClient, 'get_exp', return_value=soon_expiring):
+            with patch.object(RestApiClient, '_get_new_token', return_value=refreshed_token) as patched_get_new_token:
                 token = client.token
 
         self.assertEqual(token, refreshed_token)
@@ -87,8 +88,8 @@ class RestApiClientTokenTest(SafeTestCase):
         client._token = cached_token.copy()
         far_future_exp = datetime.now(timezone.utc).timestamp() + 6000
 
-        with patch.object(client, 'get_exp', return_value=far_future_exp):
-            with patch.object(client, '_get_new_token') as patched_get_new_token:
+        with patch.object(RestApiClient, 'get_exp', return_value=far_future_exp):
+            with patch.object(RestApiClient, '_get_new_token') as patched_get_new_token:
                 token = client.token
 
         self.assertEqual(token, cached_token)
@@ -160,7 +161,7 @@ class RestApiClientRequestTest(SafeTestCase):
 
         for method_name, kwargs in http_methods:
             with self.subTest(method=method_name):
-                with patch.object(client, '_get_header', return_value=expected_headers) as header_mock, \
+                with patch.object(RestApiClient, '_get_header', return_value=expected_headers) as header_mock, \
                         patch('ecodev_core.rest_api_client.requests') as requests_module, \
                         patch('ecodev_core.rest_api_client.handle_response'):
                     request_callable = getattr(requests_module, method_name)
