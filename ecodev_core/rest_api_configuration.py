@@ -20,6 +20,6 @@ class RestApiConfiguration(BaseSettings):
 API_AUTH = RestApiConfiguration()
 
 
-LOGIN_URL = SETTINGS.api.host or API_AUTH.host + '/login'
+LOGIN_URL = (SETTINGS.api.host or API_AUTH.host )+ '/login'
 API_USER = SETTINGS.api.user or API_AUTH.user
 API_PASSWORD = SETTINGS.api.password or API_AUTH.password
