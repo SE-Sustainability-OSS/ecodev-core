@@ -3,7 +3,7 @@ Module implementing a high level Client for calling REST API endpoints
 """
 from datetime import datetime
 from datetime import timezone
-from typing import Optional
+from typing import Any, Optional
 
 import requests
 from jose import jwt
@@ -106,53 +106,53 @@ class RestApiClient(BaseModel):
 
     def post(self,
              url: str,
-             data: Optional[dict] = None,
+             data: Optional[Any] = None,
              params: Optional[dict] = None):
         """
         Attributes:
             url (str): Url of the HTTP request
-            data (Optional[dict] = None): The body/payload of the request. Defaults to None.
+            data (Optional[Any] = None): The body/payload of the request. Defaults to None.
             params (Optional[dict] = None): Query parameters to add to the url. \
                 Defaults to None.
 
         Returns:
             response_data (Any): Response body
         """
-        return handle_response(requests.post(url=url, data=data, headers=self._get_header(),
+        return handle_response(requests.post(url=url, json=data, headers=self._get_header(),
                                              timeout=self.timeout, params=params))
 
     def put(self,
             url: str,
-            data: dict,
+            data: Any,
             params: Optional[dict] = None):
         """
         Attributes:
             url (str): Url of the HTTP request
-            data (Optional[dict] = None): The body/payload of the request. Defaults to None.
+            data (Any): The body/payload of the request.
             params (Optional[dict]): Requests parameters to add to the url. \
                 Defaults to None.
 
         Returns:
             response_data (Any): Response body
         """
-        return handle_response(requests.put(url=url, data=data, headers=self._get_header(),
+        return handle_response(requests.put(url=url, json=data, headers=self._get_header(),
                                             timeout=self.timeout, params=params))
 
     def patch(self,
               url: str,
-              data: dict,
+              data: Any,
               params: Optional[dict] = None):
         """
         Attributes:
             url (str): Url of the HTTP request
-            data (Optional[dict] = None): The body/payload of the request. Defaults to None.
+            data (Optional[Any] = None): The body/payload of the request. Defaults to None.
             params (Optional[dict]): Query parameters to add to the url. \
                 Defaults to None.
 
         Returns:
             response_data (Any): Response body
         """
-        return handle_response(requests.patch(url=url, data=data, headers=self._get_header(),
+        return handle_response(requests.patch(url=url, json=data, headers=self._get_header(),
                                               timeout=self.timeout, params=params))
 
     def delete(self,
