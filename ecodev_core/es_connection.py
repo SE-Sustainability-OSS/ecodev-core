@@ -48,32 +48,40 @@ def get_es_client():
     return ES_CLIENT
 
 
-def create_es_index(body: dict) -> None:
+def create_es_index(body: dict, index: str | None = None) -> None:
     """
     create an es index
     """
     client = get_es_client()
+    index = index or _INDEX
     try:
-        client.indices.delete(index=_INDEX)
+        client.indices.delete(index=index)
     except Exception:
         pass
-    client.indices.create(index=_INDEX, body=body)
-    log.info(f'index {_INDEX} created')
+    client.indices.create(index=index, body=body)
+    log.info(f'index {index} created')
 
 
-def insert_es_fields(operations: list[dict], batch_size: int = ES_BATCH_SIZE) -> None:
+def insert_es_fields(operations: list[dict],
+                     batch_size: int = ES_BATCH_SIZE,
+                     index: str | None = None
+                     ) -> None:
     """
     Generic es insertion
     """
     client = get_es_client()
+    index = index or _INDEX
     batches = [list(operations)[i:i + batch_size] for i in range(0, len(operations), batch_size)]
     log.info('indexing fields')
     for batch in progressbar.progressbar(batches, redirect_stdout=False):
-        helpers.bulk(client, batch, index=_INDEX)
+        helpers.bulk(client, batch, index=index)
 
 
-def retrieve_es_fields(body: dict[str, Any]) -> list[dict]:
+def retrieve_es_fields(body: dict[str, Any],
+                       index: str | None = None,
+                       size: int | None = None
+                       ) -> list[dict]:
     """
     Core call to the elasticsearch index
     """
-    return get_es_client().search(index=_INDEX, body=body)
+    return get_es_client().search(index=index, body=body, size=size)
