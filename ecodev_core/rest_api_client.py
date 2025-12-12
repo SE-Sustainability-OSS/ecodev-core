@@ -3,7 +3,7 @@ Module implementing a high level Client for calling REST API endpoints
 """
 from datetime import datetime
 from datetime import timezone
-from typing import Optional
+from typing import Any, Optional
 
 import requests
 from jose import jwt
@@ -18,20 +18,22 @@ from ecodev_core.rest_api_configuration import LOGIN_URL
 
 log = logger_get(__name__)
 
+TIMEOUT = 30
+"""
+Default request timeout in seconds
+"""
 
 class RestApiClient(BaseModel):
     """
     Client for making calls to internal REST API endpoints.
 
     Attributes:
-        timeout (int): HTTP connection timeout 30 (sec).
         _token (dict): Last fetched authentication token.
 
     NB:
         - When using this class, tokens should be accessed using the property `token` and \
             not `_token` to enforce token auto-refresh and avoid using expired auth. tokens.
     """
-    timeout: int = 30
     _token: dict = {}
 
     def _get_new_token(self) -> dict:
@@ -91,84 +93,94 @@ class RestApiClient(BaseModel):
 
     def get(self,
             url: str,
-            params: Optional[dict] = None):
+            params: Optional[dict] = None,
+            timeout: Optional[int] = 30):
         """
         Attributes:
             url (str): Url of the HTTP request
             params (Optional[dict] = None): Query parameters to add to the url. \
                 Defaults to None.
+            timeout (Optional[int]): HTTP connection timeout. Defaults to 30 (sec).
 
         Returns:
             response_data (Any): Response body
         """
         return handle_response(requests.get(url=url, headers=self._get_header(),
-                                            timeout=self.timeout, params=params))
+                                            timeout=timeout, params=params))
 
     def post(self,
              url: str,
-             data: Optional[dict] = None,
-             params: Optional[dict] = None):
+             data: Optional[Any] = None,
+             params: Optional[dict] = None,
+             timeout: Optional[int] = 30):
         """
         Attributes:
             url (str): Url of the HTTP request
-            data (Optional[dict] = None): The body/payload of the request. Defaults to None.
+            data (Optional[Any] = None): The body/payload of the request. Defaults to None.
             params (Optional[dict] = None): Query parameters to add to the url. \
                 Defaults to None.
+            timeout (Optional[int]): HTTP connection timeout. Defaults to 30 (sec).
 
         Returns:
             response_data (Any): Response body
         """
-        return handle_response(requests.post(url=url, data=data, headers=self._get_header(),
-                                             timeout=self.timeout, params=params))
+        return handle_response(requests.post(url=url, json=data, headers=self._get_header(),
+                                             timeout=timeout, params=params))
 
     def put(self,
             url: str,
-            data: dict,
-            params: Optional[dict] = None):
+            data: Any,
+            params: Optional[dict] = None,
+            timeout: Optional[int] = 30):
         """
         Attributes:
             url (str): Url of the HTTP request
-            data (Optional[dict] = None): The body/payload of the request. Defaults to None.
+            data (Any): The body/payload of the request.
             params (Optional[dict]): Requests parameters to add to the url. \
                 Defaults to None.
+            timeout (Optional[int]): HTTP connection timeout. Defaults to 30 (sec).
 
         Returns:
             response_data (Any): Response body
         """
-        return handle_response(requests.put(url=url, data=data, headers=self._get_header(),
-                                            timeout=self.timeout, params=params))
+        return handle_response(requests.put(url=url, json=data, headers=self._get_header(),
+                                            timeout=timeout, params=params))
 
     def patch(self,
               url: str,
-              data: dict,
-              params: Optional[dict] = None):
+              data: Any,
+              params: Optional[dict] = None,
+              timeout: Optional[int] = 30):
         """
         Attributes:
             url (str): Url of the HTTP request
-            data (Optional[dict] = None): The body/payload of the request. Defaults to None.
+            data (Optional[Any] = None): The body/payload of the request. Defaults to None.
             params (Optional[dict]): Query parameters to add to the url. \
                 Defaults to None.
+            timeout (Optional[int]): HTTP connection timeout. Defaults to 30 (sec).
 
         Returns:
             response_data (Any): Response body
         """
-        return handle_response(requests.patch(url=url, data=data, headers=self._get_header(),
-                                              timeout=self.timeout, params=params))
+        return handle_response(requests.patch(url=url, json=data, headers=self._get_header(),
+                                              timeout=timeout, params=params))
 
     def delete(self,
                url: str,
-               params: Optional[dict] = None):
+               params: Optional[dict] = None,
+               timeout: Optional[int] = 30):
         """
         Attributes:
             url (str): Url of the HTTP request
             params (Optional[dict]): Query parameters to add to the url. \
                 Defaults to None.
+            timeout (Optional[int]): HTTP connection timeout. Defaults to 30 (sec).
 
         Returns:
             response_data (Any): Response body
         """
         return handle_response(requests.delete(url=url, headers=self._get_header(),
-                                               timeout=self.timeout, params=params))
+                                               timeout=timeout, params=params))
 
 
 def handle_response(response: requests.Response):
