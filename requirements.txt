@@ -5,6 +5,7 @@ itsdangerous==2.*
 openpyxl==3.*
 pandas==2.*
 passlib[bcrypt]==1.*
+bcrypt==4.*
 progressbar2==4.*
 psycopg2[binary]==2.*
 pydantic[python-dotenv]==2.9.*
