@@ -37,13 +37,19 @@ _URL = SETTINGS_BCK.backup_url or BCK.backup_url
 BACKUP_URL = f'ftp://{_USER}:{_PASSWD}@{_URL}'
 
 
-def backup(backed_folder: Path, nb_saves: int = 5, additional_id: str = 'default') -> None:
+def backup(backed_folders: dict[str, Path],
+           nb_saves: int = 5,
+           additional_id: str = 'default',
+           backup_db: bool = False) -> None:
     """
     Backup db and backed_folder: write the dump/tar on the backup server and erase old copies
     """
     timestamp = datetime.now().strftime('%Y_%m_%d_%Hh_%Mmn_%Ss')
-    _backup_db(Path.cwd() / f'{additional_id}_db.{timestamp}.dump', nb_saves)
-    _backup_files(backed_folder, Path.cwd() / f'{additional_id}_files.{timestamp}.tgz', nb_saves)
+    for backup_name, backup_folder in backed_folders.items():
+        dump_path = Path.cwd() / f'{backup_name}.{timestamp}.tgz'
+        _backup_files(backup_folder, dump_path, nb_saves)
+    if backup_db:
+        _backup_db(Path.cwd() / f'{additional_id}_db.{timestamp}.dump', nb_saves)
 
 
 def retrieve_most_recent_backup(name: str = 'default_files') -> None:
@@ -67,7 +73,6 @@ def _backup_db(db_dump_path: Path, nb_saves: int) -> None:
         _backup_content(db_dump_path, nb_saves)
     else:
         log.critical(f'something went wrong : {process_output}')
-
 
 
 def _backup_files(backed_folder: Path, backup_file: Path, nb_saves: int) -> None:
