@@ -137,6 +137,7 @@ def attempt_to_log(user: str,
     If so, generate a token (with or without encoded tfa_value depending on whether this argument is
     passed as an argument). If not, returns an HTTP exception with an intelligible error message.
 
+    NB: We check password even when we know the user does not exist to prevent user enumeration
     Attributes are:
         user: the user as expected to be found in the AppUser db
         password: the plain password, to be compared with the hashed one in the AppUser db
@@ -144,11 +145,17 @@ def attempt_to_log(user: str,
         tfa_value: if filled, add it encoded to the generated token
     """
     selector = select(AppUser).where(col(AppUser.user) == user)
+    login_failed = False
+
     if not (db_user := session.exec(selector).first()):
         log.warning('unauthorized user')
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=INVALID_USER)
+        login_failed = True
+
     if not _check_password(password, db_user.password):
         log.warning('invalid user')
+        login_failed = True
+
+    if login_failed:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=INVALID_CREDENTIALS)
 
     return {'access_token': _create_access_token(data={'user_id': db_user.id}, tfa_value=tfa_value),
