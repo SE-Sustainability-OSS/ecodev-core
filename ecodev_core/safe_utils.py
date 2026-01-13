@@ -48,6 +48,7 @@ class SafeTestCase(TestCase):
         super().setUpClass()
         cls.directories_created = []
         cls.files_created = []
+        cls.test_engine = create_engine(TEST_DB_URL, pool_pre_ping=True)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -57,7 +58,32 @@ class SafeTestCase(TestCase):
         log.info(f'Done running test module: {cls.__module__.upper()}')
         cls.safe_delete(cls.directories_created, cls.files_created)
 
-    def setUp(self) -> None:
+    @classmethod
+    def create_test_db(cls) -> None:
+        """
+        Create a test database and the associated tables
+        """
+        if not TEST_DB:
+            raise ValueError('Settings.database.db_test_name not defined')
+
+        log.info(f'creating db {TEST_DB}')
+
+        exec_admin_queries([
+            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{TEST_DB}'",
+            f'DROP DATABASE IF EXISTS {TEST_DB}',
+            f'CREATE DATABASE {TEST_DB}'])
+
+        SQLModel.metadata.create_all(cls.test_engine)
+
+    @classmethod
+    def delete_test_db(cls) -> None:
+        log.info('deleting db')
+        exec_admin_queries([
+            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{TEST_DB}'",
+            f'DROP DATABASE IF EXISTS {TEST_DB}'
+        ])
+
+    def setUp(self, handle_db=True) -> None:
         """
         Test set up, prompt test name and set files and folders to be suppressed at tearDown
         """
@@ -65,20 +91,17 @@ class SafeTestCase(TestCase):
         log.debug(f'Running test: {self._testMethodName.upper()}')
         self.directories_created: List[Path] = []
         self.files_created: List[Path] = []
-        exec_admin_queries([f'CREATE DATABASE {TEST_DB}'])
-        self.test_engine = create_engine(TEST_DB_URL, pool_pre_ping=True)
-        SQLModel.metadata.create_all(self.test_engine)
+        if handle_db:
+            self.create_test_db()
 
-    def tearDown(self) -> None:
+    def tearDown(self, handle_db=True) -> None:
         """
         Safely suppress all files and directories used for this test
         """
         log.debug(f'Done running test: {self._testMethodName.upper()}')
         self.safe_delete(self.directories_created, self.files_created)
-        exec_admin_queries([
-            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{TEST_DB}'",
-            f'DROP DATABASE IF EXISTS {TEST_DB}'
-        ])
+        if handle_db:
+            self.delete_test_db()
 
     @classmethod
     def safe_delete(cls, directories_created: List[Path], files_created: List[Path]) -> None:
