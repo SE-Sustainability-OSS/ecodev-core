@@ -3,7 +3,8 @@ Module implementing a high level Client for calling REST API endpoints
 """
 from datetime import datetime
 from datetime import timezone
-from typing import Any, Optional
+from typing import Any
+from typing import Optional
 
 import requests
 from jose import jwt
@@ -12,9 +13,7 @@ from pydantic import BaseModel
 from ecodev_core import logger_get
 from ecodev_core.authentication import ALGO
 from ecodev_core.authentication import SECRET_KEY
-from ecodev_core.rest_api_configuration import API_PASSWORD
-from ecodev_core.rest_api_configuration import API_USER
-from ecodev_core.rest_api_configuration import LOGIN_URL
+from ecodev_core.settings import SETTINGS
 
 log = logger_get(__name__)
 
@@ -22,6 +21,7 @@ TIMEOUT = 30
 """
 Default request timeout in seconds
 """
+
 
 class RestApiClient(BaseModel):
     """
@@ -46,9 +46,10 @@ class RestApiClient(BaseModel):
         Returns:
             dict: The authentication token response from login API.
         """
-        if (data := handle_response(requests.post(f'{LOGIN_URL}',
-                                                  data={'username': API_USER,
-                                                        'password': API_PASSWORD}))) is None:
+        if (data := handle_response(requests.post(f'{(SETTINGS.api.host)}/login',
+                                                  data={
+                                                      'username': SETTINGS.api.user,
+                                                      'password': SETTINGS.api.password}))) is None:
             raise ConnectionRefusedError('Failed to login')
         return data
 

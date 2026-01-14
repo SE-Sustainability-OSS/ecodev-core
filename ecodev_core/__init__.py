@@ -88,6 +88,9 @@ from ecodev_core.read_write import load_json_file
 from ecodev_core.read_write import load_yaml_file
 from ecodev_core.read_write import make_dir
 from ecodev_core.read_write import write_json_file
+from ecodev_core.rest_api_client import get_rest_api_client
+from ecodev_core.rest_api_client import handle_response
+from ecodev_core.rest_api_client import RestApiClient
 from ecodev_core.safe_utils import boolify
 from ecodev_core.safe_utils import datify
 from ecodev_core.safe_utils import floatify
@@ -103,10 +106,6 @@ from ecodev_core.version import db_to_value
 from ecodev_core.version import get_row_versions
 from ecodev_core.version import get_versions
 from ecodev_core.version import Version
-from ecodev_core.rest_api_client import get_rest_api_client
-from ecodev_core.rest_api_client import RestApiClient
-from ecodev_core.rest_api_client import handle_response
-from ecodev_core.rest_api_configuration import API_AUTH
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
     'write_json_file', 'load_json_file', 'make_dir', 'check_dependencies', 'compute_dependencies',
