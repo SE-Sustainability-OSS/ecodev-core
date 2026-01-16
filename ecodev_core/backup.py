@@ -10,9 +10,6 @@ from subprocess import run
 from subprocess import STDOUT
 from typing import List
 
-from pydantic_settings import BaseSettings
-from pydantic_settings import SettingsConfigDict
-
 from ecodev_core.db_connection import DB_URL
 from ecodev_core.logger import logger_get
 from ecodev_core.settings import SETTINGS
@@ -20,21 +17,13 @@ from ecodev_core.settings import SETTINGS
 log = logger_get(__name__)
 
 
-class BackUpSettings(BaseSettings):
-    """
-    Settings class used to connect to the ftp server backup
-    """
-    backup_username: str = ''
-    backup_password: str = ''
-    backup_url: str = ''
-    model_config = SettingsConfigDict(env_file='.env')
+def get_backup_url():
+    bck_settings = SETTINGS.backup
 
-
-BCK, SETTINGS_BCK = BackUpSettings(), SETTINGS.backup  # type: ignore[attr-defined]
-_USER = SETTINGS_BCK.backup_username or BCK.backup_username
-_PASSWD = SETTINGS_BCK.backup_password or BCK.backup_password
-_URL = SETTINGS_BCK.backup_url or BCK.backup_url
-BACKUP_URL = f'ftp://{_USER}:{_PASSWD}@{_URL}'
+    user = bck_settings.backup_username
+    password = bck_settings.backup_password
+    url = bck_settings.get_backup_url()
+    return f'ftp://{user}:{password}@{url}'
 
 
 def backup(backed_folders: dict[str, Path],
@@ -56,10 +45,10 @@ def retrieve_most_recent_backup(name: str = 'default_files') -> None:
     """
     Retrieve from backup server the most recent backup of the name family.
     """
-    output = run(['lftp', '-c', f'open {BACKUP_URL}; ls'], capture_output=True, text=True)
+    output = run(['lftp', '-c', f'open {get_backup_url()}; ls'], capture_output=True, text=True)
     all_backups = sorted([x.split(' ')[-1] for x in output.stdout.splitlines() if name in x])
     log.info(f'most recent backup {all_backups[-1]}')
-    run(['lftp', '-c', f'open {BACKUP_URL}; get {all_backups[-1]}'])
+    run(['lftp', '-c', f'open {get_backup_url()}; get {all_backups[-1]}'])
     return None
 
 
@@ -89,11 +78,11 @@ def _backup_content(file_to_backup: Path, nb_saves: int) -> None:
     Write file_to_backup on the backup server and delete versions so as to keep only nb_saves copies
     """
     log.warning(f'Transferring backup to server: {file_to_backup}')
-    run(['lftp', '-c', f'open {BACKUP_URL}; put {file_to_backup}'])
+    run(['lftp', '-c', f'open {get_backup_url()}; put {file_to_backup}'])
     backups_to_delete = _get_old_backups(file_to_backup, nb_saves)
     log.info(f'deleting remote backups {backups_to_delete}')
     for to_rm in backups_to_delete:
-        run(['lftp', '-c', f'open {BACKUP_URL}; rm {to_rm}'], capture_output=True, text=True)
+        run(['lftp', '-c', f'open {get_backup_url()}; rm {to_rm}'], capture_output=True, text=True)
     log.info(f'deleting local {file_to_backup}')
     file_to_backup.unlink()
 
@@ -102,7 +91,7 @@ def _get_old_backups(file_to_backup: Path, nb_saves: int) -> List[str]:
     """
     Retrieve old versions of file_to_backup in order to erase them (more than nb_saves ago)
     """
-    output = run(['lftp', '-c', f'open {BACKUP_URL}; ls'], capture_output=True, text=True)
+    output = run(['lftp', '-c', f'open {get_backup_url()}; ls'], capture_output=True, text=True)
     filename_base = file_to_backup.name.split('.')[0]
     all_backups = sorted([x.split(' ')[-1]
                          for x in output.stdout.splitlines() if filename_base in x])

@@ -7,8 +7,6 @@ from typing import Union
 import progressbar
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
-from pydantic_settings import BaseSettings
-from pydantic_settings import SettingsConfigDict
 
 from ecodev_core.logger import logger_get
 from ecodev_core.settings import SETTINGS
@@ -18,32 +16,18 @@ log = logger_get(__name__)
 ES_BATCH_SIZE = 5000
 
 
-class ESAuth(BaseSettings):
-    """
-    Simple ES authentication configuration class
-    """
-    host: str = ''
-    user: str = ''
-    password: str = ''
-    port: int = 9200
-    index: str = ''
-    model_config = SettingsConfigDict(env_file='.env', env_prefix='ES_')
-
-
-ES_AUTH, ES_SETTINGS = ESAuth(), SETTINGS.elastic_search  # type: ignore[attr-defined]
-_HOST, _PORT = ES_SETTINGS.host or ES_AUTH.host,  ES_SETTINGS.port or ES_AUTH.port
-_USER, _PASSWD = ES_SETTINGS.user or ES_AUTH.user, ES_SETTINGS.password or ES_AUTH.password
-_INDEX = ES_SETTINGS.index or ES_AUTH.index
-
-
 def get_es_client():
     """
     Get the elasticsearch client
     """
     global ES_CLIENT
 
+    host = SETTINGS.elastic_search.host
+    port = SETTINGS.elastic_search.port
+    user = SETTINGS.elastic_search.user
+    password = SETTINGS.elastic_search.password
     if ES_CLIENT is None:
-        ES_CLIENT = Elasticsearch(f'http://{_HOST}:{_PORT}/', basic_auth=[_USER, _PASSWD])
+        ES_CLIENT = Elasticsearch(f'http://{host}:{port}/', basic_auth=[user, password])
 
     return ES_CLIENT
 
@@ -53,7 +37,7 @@ def create_es_index(body: dict, index: str | None = None) -> None:
     create an es index
     """
     client = get_es_client()
-    index = index or _INDEX
+    index = index or SETTINGS.elastic_search.index
     try:
         client.indices.delete(index=index)
     except Exception:
@@ -70,7 +54,7 @@ def insert_es_fields(operations: list[dict],
     Generic es insertion
     """
     client = get_es_client()
-    index = index or _INDEX
+    index = index or SETTINGS.elastic_search.index
     batches = [list(operations)[i:i + batch_size] for i in range(0, len(operations), batch_size)]
     log.info('indexing fields')
     for batch in progressbar.progressbar(batches, redirect_stdout=False):

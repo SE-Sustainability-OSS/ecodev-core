@@ -2,25 +2,21 @@
 Module implementing simple fernet AES128 encryption/decryption
 """
 from cryptography.fernet import Fernet
-from pydantic_settings import BaseSettings
-from pydantic_settings import SettingsConfigDict
 
 from ecodev_core.settings import SETTINGS
 
 
-class EncryptionConf(BaseSettings):
-    """
-    Simple authentication configuration class
-    """
-    fernet_key: str = ''
-    model_config = SettingsConfigDict(env_file='.env')
+FERNET: Fernet | None = None
 
 
-SECRET_KEY = SETTINGS.fernet_key or EncryptionConf().fernet_key  # type: ignore[attr-defined]
-FERNET = Fernet(SECRET_KEY.encode())
+def get_fernet():
+    global FERNET
+    if FERNET is None:
+        FERNET = Fernet(SETTINGS.fernet_key.encode())
+    return FERNET
 
 
-def encrypt_value(value):
+def encrypt_value(value: float) -> bytes:
     """
     Encrypt a value using Fernet symmetric encryption.
 
@@ -30,10 +26,10 @@ def encrypt_value(value):
     Returns:
         Encrypted bytes
     """
-    return FERNET.encrypt(str(value).encode())
+    return get_fernet().encrypt(str(value).encode())
 
 
-def decrypt_value(encrypted):
+def decrypt_value(encrypted: bytes):
     """
     Decrypt an encrypted value and convert to float.
 
@@ -43,4 +39,4 @@ def decrypt_value(encrypted):
     Returns:
         Decrypted value as float
     """
-    return float(FERNET.decrypt(encrypted).decode())
+    return float(get_fernet().decrypt(encrypted).decode())

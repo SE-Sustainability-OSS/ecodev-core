@@ -6,8 +6,6 @@ from typing import List
 from typing import Optional
 from urllib.parse import quote
 
-from pydantic_settings import BaseSettings
-from pydantic_settings import SettingsConfigDict
 from sqlalchemy import delete
 from sqlalchemy import text
 from sqlmodel import create_engine
@@ -20,25 +18,18 @@ from ecodev_core.settings import SETTINGS
 log = logger_get(__name__)
 
 
-class DbSettings(BaseSettings):
-    """
-    Settings class used to connect to the postgresql database
-    """
-    db_host: str = ''
-    db_port: str = ''
-    db_name: str = ''
-    db_username: str = ''
-    db_password: str = ''
-    db_test_name: str = ''
-    model_config = SettingsConfigDict(env_file='.env')
-
-
-DB, SETTINGS_DB = DbSettings(), SETTINGS.database  # type: ignore[attr-defined]
-_PASSWORD = quote(SETTINGS_DB.db_password or DB.db_password, safe='')
-_USER, _HOST = SETTINGS_DB.db_username or DB.db_username, SETTINGS_DB.db_host or DB.db_host
-_PORT, _NAME = SETTINGS_DB.db_port or DB.db_port, SETTINGS_DB.db_name or DB.db_name
+SETTINGS_DB = SETTINGS.database  # type: ignore[attr-defined]
+_PASSWORD = quote(SETTINGS_DB.db_password, safe='')
+_USER = SETTINGS_DB.db_username
+_HOST = SETTINGS_DB.db_host
+_PORT = SETTINGS_DB.db_port
+_NAME = SETTINGS_DB.db_name
 DB_URL = f'postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{_NAME}'
-TEST_DB = SETTINGS_DB.db_test_name or DB.db_test_name
+default_test_db = 'test_db'
+try:
+    TEST_DB = SETTINGS_DB.db_test_name or default_test_db
+except AttributeError:
+    TEST_DB = default_test_db
 TEST_DB_URL = f'postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{TEST_DB}'
 _ADMIN_DB_URL = f'postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/postgres'
 engine = create_engine(DB_URL, pool_pre_ping=True)

@@ -29,7 +29,7 @@ BASE_PATH = Path(DEPLOYMENT_SETTINGS.base_path)
 
 class Settings:
     """
-    Dynami setting class, loading yaml configuration from config file, possibly overwriting some of
+    Dynamic setting class, loading yaml configuration from config file, possibly overwriting some of
     this configuration with additional information coming from a secret file.
     """
 
