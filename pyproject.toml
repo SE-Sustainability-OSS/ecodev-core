@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ecodev-core"
-version = "0.0.74"
+version = "0.0.75"
 description = "Low level sqlmodel/fastapi/pydantic building blocks"
 authors = ["Thomas Epelbaum <tomepel@gmail.com>",
 					 "Olivier Gabriel <olivier.gabriel.geom@gmail.com>",
@@ -33,8 +33,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Database",
@@ -42,23 +43,24 @@ classifiers = [
 ]
 [tool.poetry.dependencies]
 python = "^3.11"
-elasticsearch = "^8.14.0"
+bcrypt="~5"
+elasticsearch = "~9"
 fastapi = "~0"
 httpx = "~0"
 numpy = "~1"
 openpyxl = "~3"
-orjson = "^3.10.5"
+orjson = "~3"
 pandas = "~2"
-passlib = {version = "~1", extras = ["bcyrypt"]}
-progressbar2 = "^4.4.2"
+passlib = "~1"
+progressbar2 =  "~4"
 psycopg2-binary = "~2"
-pydantic = "2.11.7"
+pydantic = "~2"
 pydantic-settings = "~2"
-python-jose = {version = "~3", extras = ["cryptography"]}
+python-jose = "~3"
 pyyaml = "~6"
 sqladmin = "0.15.2"
 sqlmodel = "~0"
-uvicorn = "0.28.1"
+uvicorn = "~0"
 xlsxwriter = "~3"
 cryptography = "~46"
 requests = "~2"
