@@ -1,4 +1,4 @@
-bcrypt==5.*
+bcrypt==4.*
 cryptography==46.*
 fastapi==0.*
 httpx==0.*
