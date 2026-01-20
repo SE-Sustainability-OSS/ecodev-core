@@ -1,0 +1,17 @@
+authentication:
+   algorithm: HS256
+   access_token_expire_minutes: 1440
+   secret_key: totototototototototototototototototototo
+
+database:
+   db_port: 5432
+   db_name: postgres
+   db_host: postgres
+   db_username: postgres
+   db_password: postgres
+   db_test_name: test_db
+
+
+app_name: ecodev-core
+
+fernet_key: 3333333333333333333333333333333333333333333=

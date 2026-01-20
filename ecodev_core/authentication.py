@@ -46,6 +46,7 @@ ADMIN_ERROR = 'Could not validate credentials. You need admin rights to call thi
 INVALID_CREDENTIALS = 'Invalid Credentials'
 REVOKED_TOKEN = 'This token has been revoked (by a logout action), please login again.'
 log = logger_get(__name__)
+INVALID_HASH = '$2b$12$pdH0b8fYDkXC41jXDa425e7xSbzJeNhHlCIuHpkaxHIcass5/Xkxe'
 
 
 class Token(Frozen):
@@ -137,7 +138,8 @@ def attempt_to_log(user: str,
     If so, generate a token (with or without encoded tfa_value depending on whether this argument is
     passed as an argument). If not, returns an HTTP exception with an intelligible error message.
 
-    NB: We check password even when we know the user does not exist to prevent user enumeration
+    NB: If the user does not exist we still check password against a random one so that the function
+    takes as long as for an existing user to prevent user enumeration
     Attributes are:
         user: the user as expected to be found in the AppUser db
         password: the plain password, to be compared with the hashed one in the AppUser db
@@ -151,7 +153,7 @@ def attempt_to_log(user: str,
         log.warning('unauthorized user')
         login_failed = True
 
-    if not _check_password(password, db_user.password):
+    if not _check_password(password, db_user.password if db_user else INVALID_HASH):
         log.warning('invalid user')
         login_failed = True
 

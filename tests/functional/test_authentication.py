@@ -34,7 +34,6 @@ from ecodev_core.authentication import get_current_user
 from ecodev_core.authentication import get_user
 from ecodev_core.authentication import INVALID_CREDENTIALS
 from ecodev_core.authentication import INVALID_TFA
-from ecodev_core.authentication import INVALID_USER
 from ecodev_core.authentication import is_admin_user
 from ecodev_core.authentication import is_authorized_user
 from ecodev_core.authentication import JwtAuth
@@ -157,7 +156,7 @@ class AuthenticationTest(SafeTestCase):
                 wrong_user = attempt_to_log('clien', 'clien', session)
             except HTTPException as e:
                 wrong_user = e.detail
-            self.assertEqual(wrong_user, INVALID_USER)
+            self.assertEqual(wrong_user, INVALID_CREDENTIALS)
 
     def test_app_rights(self):
         """
