@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ecodev-core"
-version = "0.0.80"
+version = "0.0.81"
 description = "Low level sqlmodel/fastapi/pydantic building blocks"
 authors = ["Thomas Epelbaum <tomepel@gmail.com>",
 					 "Olivier Gabriel <olivier.gabriel.geom@gmail.com>",
@@ -45,7 +45,7 @@ classifiers = [
 python = "^3.11"
 asgiref = "~3"
 bcrypt= "~4"
-elasticsearch = "~9"
+elasticsearch = "8.14.0"
 fastapi = "~0"
 httpx = "~0"
 numpy = "~1"
