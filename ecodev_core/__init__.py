@@ -106,7 +106,7 @@ from ecodev_core.version import db_to_value
 from ecodev_core.version import get_row_versions
 from ecodev_core.version import get_versions
 from ecodev_core.version import Version
-from ecodev_core.sequence_utils import batch_iterable
+from ecodev_core.sequence_utils import batch_sequence
 
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
@@ -127,4 +127,4 @@ __all__ = [
     'SETTINGS', 'add_missing_enum_values', 'ban_token', 'TokenBanlist', 'is_banned',
     'get_lang', 'set_lang', 'Lang', 'localized_col', 'I18nMixin', 'add_missing_columns',
     'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient', 'handle_response',
-    'API_AUTH', 'batch_iterable']
+    'API_AUTH', 'batch_sequence']
