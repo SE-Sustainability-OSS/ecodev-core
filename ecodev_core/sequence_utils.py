@@ -9,7 +9,7 @@ from typing import TypeVar
 T = TypeVar('T', bound=object)
 
 
-def batch_iterable(to_batch: Sequence[T],
+def batch_sequence(to_batch: Sequence[T],
                    batch_size: int) -> Generator[tuple[int, Sequence[T]], None, None]:
     """
     Yields batches of size batch_size from the given sequence.
