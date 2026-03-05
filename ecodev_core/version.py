@@ -50,6 +50,7 @@ class Version(SQLModel, table=True):  # type: ignore
     row_id: int = Field(index=True)
     col_type: ColType
     value: str | None = Field(index=True)
+    version_id: str | None = Field(index=True)
 
     __table_args__ = (
         Index(
