@@ -102,7 +102,8 @@ def upsert_selector(values: SQLModel, db_schema: SQLModelMetaclass) -> SelectOfS
 def upsert_updator(values: SQLModel,
                    row_id: int,
                    session: Session,
-                   db_schema: SQLModelMetaclass
+                   db_schema: SQLModelMetaclass,
+                   version_id: str | None = None
                    ) -> None:
     """
     Update the passed row_id from db_schema db with passed new_values.
@@ -118,7 +119,14 @@ def upsert_updator(values: SQLModel,
 
     for col, val in {k: v for k, v in db.items() if k in to_update and _value_comparator(
             v, to_update[k])}.items():
-        session.add(Version.from_table_row(table, col, row_id, col_types[col], val))
+        if version_id and (version_db := session.exec(select(Version).where(
+                Version.table == table,
+                Version.column == col,
+                Version.row_id == row_id,
+                Version.version_id == version_id)).first()):
+            version_db.value = val
+        else:
+            session.add(Version.from_table_row(table, col, row_id, col_types[col], val, version_id))
 
     return update(db_schema).where(db_schema.id == row_id).values(**to_update)
 
@@ -151,13 +159,14 @@ def upsert_df_data(df: Union[pd.DataFrame], db_schema: SQLModelMetaclass, sessio
 
 def upsert_data(data: list[dict | SQLModelMetaclass],
                 session: Session,
-                raw_db_schema: SQLModelMetaclass | None = None) -> None:
+                raw_db_schema: SQLModelMetaclass | None = None,
+                version_id: str | None = None) -> None:
     """
     Upsert the passed list of dicts (corresponding to db_schema) into db_schema db.
     """
     db_schema = raw_db_schema or data[0].__class__
     selector = partial(upsert_selector, db_schema=db_schema)
-    updator = partial(upsert_updator, db_schema=db_schema)
+    updator = partial(upsert_updator, db_schema=db_schema, version_id=version_id)
     batches = [data[i:i + BATCH_SIZE] for i in range(0, len(data), BATCH_SIZE)]
 
     for batch in progressbar.progressbar(batches, redirect_stdout=False):
