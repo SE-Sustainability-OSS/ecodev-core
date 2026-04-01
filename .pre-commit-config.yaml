@@ -1,10 +1,10 @@
 default_language_version:
     python: python3
 default_stages:
-- commit
+- pre-commit
 repos:
--   repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v2.0.4
+-   repo: https://github.com/hhatto/autopep8
+    rev: v2.1.0
     hooks:
     -   id: autopep8
         args:
@@ -15,10 +15,10 @@ repos:
     hooks:
     -   id: trailing-whitespace
         stages:
-        - commit
+        - pre-commit
     -   id: end-of-file-fixer
         stages:
-        - commit
+        - pre-commit
     -   id: check-merge-conflict
     -   id: double-quote-string-fixer
     -   id: check-byte-order-marker
@@ -35,8 +35,8 @@ repos:
         args:
         - --application-directories=.:software
         - --py3-plus
--   repo: https://github.com/humitos/mirrors-autoflake.git
-    rev: v1.1
+-   repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
     hooks:
     -   id: autoflake
         args:

@@ -50,6 +50,7 @@ class Version(SQLModel, table=True):  # type: ignore
     row_id: int = Field(index=True)
     col_type: ColType
     value: str | None = Field(index=True)
+    version_id: str | None = Field(index=True)
 
     __table_args__ = (
         Index(
@@ -65,14 +66,16 @@ class Version(SQLModel, table=True):  # type: ignore
                        column: str,
                        row_id: int,
                        raw_type: type | EnumType,
-                       raw_val: COL_TYPES
+                       raw_val: COL_TYPES,
+                       version_id: str | None = None
                        ) -> 'Version':
         """
         Create a new Version out of the passed information
         """
         col_type = _col_type_to_db(raw_type)
         value = _value_to_db(raw_val, col_type)
-        return cls(table=table, column=column, row_id=row_id, col_type=col_type, value=value)
+        return cls(table=table, column=column, row_id=row_id, col_type=col_type, value=value,
+                   version_id=version_id)
 
 
 def get_versions(table: str, column: str, row_id: int, session: Session) -> list[Version]:
