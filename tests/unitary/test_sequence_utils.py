@@ -37,7 +37,7 @@ class SequenceUtilsTest(unittest.TestCase):
         test batch_sequence with one full batch and one partial batch
         """
         batches = list(batch_sequence([1, 2, 3, 4], 3))
-        self.assertEqual(batches, [(0, [1, 2, 3]), (3, [4])])
+        self.assertEqual(batches, [(0, [1, 2, 3]), (1, [4])])
 
     def test_batch_sequence_multiple_full_batches(self):
         """
@@ -46,7 +46,7 @@ class SequenceUtilsTest(unittest.TestCase):
         batches = list(batch_sequence([1, 2, 3, 4, 5, 6], 2))
         self.assertEqual(
             batches,
-            [(0, [1, 2]), (2, [3, 4]), (4, [5, 6])],
+            [(0, [1, 2]), (1, [3, 4]), (2, [5, 6])],
         )
 
     def test_batch_sequence_partial_last_batch(self):
@@ -56,7 +56,7 @@ class SequenceUtilsTest(unittest.TestCase):
         batches = list(batch_sequence([1, 2, 3, 4, 5], 2))
         self.assertEqual(
             batches,
-            [(0, [1, 2]), (2, [3, 4]), (4, [5])],
+            [(0, [1, 2]), (1, [3, 4]), (2, [5])],
         )
 
     def test_batch_sequence_batch_size_one(self):
@@ -74,4 +74,4 @@ class SequenceUtilsTest(unittest.TestCase):
         test batch_sequence works with tuple (Sequence)
         """
         batches = list(batch_sequence((10, 20, 30), 2))
-        self.assertEqual(batches, [(0, (10, 20)), (2, (30,))])
+        self.assertEqual(batches, [(0, (10, 20)), (1, (30,))])

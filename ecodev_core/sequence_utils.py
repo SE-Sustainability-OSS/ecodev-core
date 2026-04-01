@@ -14,5 +14,5 @@ def batch_sequence(to_batch: Sequence[T],
     """
     Yields batches of size batch_size from the given sequence.
     """
-    for i in range(0, len(to_batch), batch_size):
-        yield i, to_batch[i:i+batch_size]
+    for batch_i, i in enumerate(range(0, len(to_batch), batch_size)):
+        yield batch_i, to_batch[i:i+batch_size]
