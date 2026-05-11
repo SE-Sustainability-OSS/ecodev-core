@@ -62,6 +62,7 @@ from ecodev_core.email_sender import send_email
 from ecodev_core.encryption import decrypt_value
 from ecodev_core.encryption import encrypt_value
 from ecodev_core.enum_utils import enum_converter
+from ecodev_core.enum_utils import resolve_enum
 from ecodev_core.list_utils import first_func_or_default
 from ecodev_core.list_utils import first_or_default
 from ecodev_core.list_utils import first_transformed_or_default
@@ -116,7 +117,7 @@ __all__ = [
     'logger_get', 'Permission', 'AppUser', 'AppRight', 'Basic', 'Frozen', 'CustomFrozen', 'JwtAuth',
     'SafeTestCase', 'SimpleReturn', 'safe_clt', 'stringify', 'boolify', 'get_user', 'floatify',
     'delete_table', 'SCHEME', 'DB_URL', 'pd_equals', 'jsonify_series', 'upsert_app_users', 'intify',
-    'enum_converter', 'ServerSideFilter', 'get_rows', 'count_rows', 'ServerSideField', 'get_raw_df',
+    'enum_converter', 'resolve_enum', 'ServerSideFilter', 'get_rows', 'count_rows', 'ServerSideField', 'get_raw_df',
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
