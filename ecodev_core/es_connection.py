@@ -69,3 +69,37 @@ def retrieve_es_fields(body: dict[str, Any],
     Core call to the elasticsearch index
     """
     return get_es_client().search(index=index, body=body, size=size)
+
+
+def retrieve_es_fields_with_scroll(body: dict, 
+                                   index: str,
+                                   page_size: int = 1000,
+                                   scroll_ttl: str = '1m'
+                                   ) -> list[dict]:
+    """
+    Retrieve all hits for the given query using the scroll API.
+    Use this instead of retrieve_es_fields for ES indices with more than 10,000 entries,
+    as Elasticsearch's default max_result_window prevents returning more results in a single query.
+
+    Args:
+        body: the ES query body (e.g. {"query": {"match_all": {}}})
+        index: the ES index to search against
+        page_size: number of hits fetched per scroll page (defaults to 1,000)
+        scroll_ttl: how long ES keeps the scroll context alive between two consecutive scroll calls
+                    (defaults to 1 minute)
+    """
+    es = get_es_client()
+    body = {**body, 'size': page_size}
+    response = es.search(index=index, body=body, scroll=scroll_ttl)
+    scroll_id = response.get('_scroll_id')
+    hits = list(response['hits']['hits'])
+    while len(response['hits']['hits']) == page_size:
+        response = es.scroll(scroll_id=scroll_id, scroll=scroll_ttl)
+        scroll_id = response.get('_scroll_id')
+        hits.extend(response['hits']['hits'])
+    if scroll_id:
+        try:
+            es.clear_scroll(scroll_id=scroll_id)
+        except Exception:
+            pass
+    return hits
