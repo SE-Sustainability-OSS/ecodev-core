@@ -152,8 +152,10 @@ def attempt_to_log(user: str,
     if not (db_user := session.exec(selector).first()):
         log.warning('unauthorized user')
         login_failed = True
-
-    if not _check_password(password, db_user.password if db_user else INVALID_HASH):
+    log.critical(f'db_user: {db_user}')
+    log.critical(f'password: {password}')
+    log.critical(f'db_user.password: {repr(db_user.password)}')
+    if not _check_password(password, db_user.password if db_user and db_user.password else INVALID_HASH):
         log.warning('invalid user')
         login_failed = True
 
@@ -322,4 +324,6 @@ def _check_password(plain_password: Optional[str], hashed_password: str) -> bool
     """
     Check the passed password (compare it to the passed encoded one).
     """
+    log.info(f'plain_password: {plain_password}')
+    log.info(f'hashed_password: {hashed_password}')
     return CONTEXT.verify(plain_password, hashed_password)
