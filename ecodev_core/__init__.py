@@ -99,6 +99,7 @@ from ecodev_core.safe_utils import safe_clt
 from ecodev_core.safe_utils import SafeTestCase
 from ecodev_core.safe_utils import SimpleReturn
 from ecodev_core.safe_utils import stringify
+from ecodev_core.safe_utils import PostGisSafeTestCase
 from ecodev_core.settings import SETTINGS
 from ecodev_core.settings import Settings
 from ecodev_core.token_banlist import TokenBanlist
@@ -127,4 +128,4 @@ __all__ = [
     'SETTINGS', 'add_missing_enum_values', 'ban_token', 'TokenBanlist', 'is_banned',
     'get_lang', 'set_lang', 'Lang', 'localized_col', 'I18nMixin', 'add_missing_columns',
     'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient', 'handle_response',
-    'API_AUTH', 'batch_sequence']
+    'API_AUTH', 'batch_sequence', 'PostGisSafeTestCase']
