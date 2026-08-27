@@ -36,3 +36,6 @@
     password: null
 
  fernet_key: null
+
+ stats_api:
+    api_key: null

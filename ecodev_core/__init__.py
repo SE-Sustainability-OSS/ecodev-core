@@ -108,6 +108,13 @@ from ecodev_core.version import get_row_versions
 from ecodev_core.version import get_versions
 from ecodev_core.version import Version
 from ecodev_core.sequence_utils import batch_sequence
+from ecodev_core.app_stats import ActivityExport
+from ecodev_core.app_stats import api_key_or_monitoring
+from ecodev_core.app_stats import get_activities
+from ecodev_core.app_stats import get_stats_router
+from ecodev_core.app_stats import PagedResponse
+from ecodev_core.app_stats import ProjectExport
+from ecodev_core.app_stats import ProjectStatsAdapter
 
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
@@ -128,4 +135,6 @@ __all__ = [
     'SETTINGS', 'add_missing_enum_values', 'ban_token', 'TokenBanlist', 'is_banned',
     'get_lang', 'set_lang', 'Lang', 'localized_col', 'I18nMixin', 'add_missing_columns',
     'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient', 'handle_response',
-    'API_AUTH', 'batch_sequence', 'PostGisSafeTestCase']
+    'batch_sequence', 'PostGisSafeTestCase',
+    'ActivityExport', 'ProjectExport', 'PagedResponse', 'ProjectStatsAdapter',
+    'get_activities', 'api_key_or_monitoring', 'get_stats_router']
