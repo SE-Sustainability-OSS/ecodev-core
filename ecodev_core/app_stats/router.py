@@ -56,9 +56,6 @@ def get_stats_router(
         Returns a page of hourly activity buckets, ordered ascending by hour.
         Pass `next_from_date` from the previous response as `from_date` to advance the cursor.
         """
-        log.info('[stats-producer] /activities  from_date=%s  to_date=%s  method=%s  page_size=%d',
-                 from_date, to_date, method, page_size)
-        t0 = time.monotonic()
         result = get_activities(
             session=session,
             from_date=from_date,
@@ -66,12 +63,6 @@ def get_stats_router(
             method=method,
             page_size=page_size,
         )
-        elapsed_ms = round((time.monotonic() - t0) * 1000)
-        first_hour = result.items[0].hour if result.items else None
-        last_hour = result.items[-1].hour if result.items else None
-        log.info('[stats-producer] /activities  returned=%d  first_hour=%s  last_hour=%s'
-                 '  next_from_date=%s  elapsed_ms=%d',
-                 len(result.items), first_hour, last_hour, result.next_from_date, elapsed_ms)
         return result
 
     if adapter is not None:
@@ -94,15 +85,11 @@ def _register_projects(router: APIRouter, adapter: ProjectStatsAdapter) -> None:
         Returns a page of project snapshots.
         Registered only when the app supplies a ProjectStatsAdapter.
         """
-        log.info('[stats-producer] /projects  from_date=%s  to_date=%s', from_date, to_date)
-        t0 = time.monotonic()
         items = list(adapter.list_projects(session, from_date, to_date))
         paged = [items[i:i + adapter.page_size]
                  for i in range(0, len(items), adapter.page_size)]
 
         if not items:
-            log.info('[stats-producer] /projects  returned=0  elapsed_ms=%d',
-                     round((time.monotonic() - t0) * 1000))
             return PagedResponse(items=[], next_from_date=None)
 
         page_items = paged[0]
@@ -111,7 +98,4 @@ def _register_projects(router: APIRouter, adapter: ProjectStatsAdapter) -> None:
             if len(paged) > 1 and page_items
             else None
         )
-        elapsed_ms = round((time.monotonic() - t0) * 1000)
-        log.info('[stats-producer] /projects  total=%d  page=%d  next_from_date=%s  elapsed_ms=%d',
-                 len(items), len(page_items), next_from_date, elapsed_ms)
         return PagedResponse(items=page_items, next_from_date=next_from_date)

@@ -33,7 +33,9 @@ def _configured_api_key() -> str | None:
 
 
 def _mask_secret(value: str | None) -> str:
-    """Returns last-4 masked representation: ****abcd, or '<none>' when empty."""
+    """
+    Returns last-4 masked representation: ****abcd, or '<none>' when empty.
+    """
     if not value:
         return '<none>'
     return f'****{value[-4:]}' if len(value) > 4 else '****'
@@ -58,11 +60,7 @@ async def api_key_or_monitoring(
 
     if x_api_key is not None:
         if configured_key and secrets.compare_digest(x_api_key, configured_key):
-            log.info('[stats-auth] X-API-Key accepted (presented=%s configured=%s)',
-                     _mask_secret(x_api_key), _mask_secret(configured_key))
             return
-        log.warning('[stats-auth] X-API-Key REJECTED (presented=%s configured=%s)',
-                    _mask_secret(x_api_key), _mask_secret(configured_key))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_KEY_MSG)
 
     token = _extract_bearer(authorization)
@@ -70,17 +68,9 @@ async def api_key_or_monitoring(
         user = get_current_user(token)
         if user and user.user == MONITORING:
             if not _DEPRECATION_WARNED:
-                log.warning(
-                    '[stats-auth] Stats endpoint accessed via monitoring JWT (user=%s). '
-                    'Switch to X-API-Key; JWT fallback will be removed in a future release.',
-                    user.user,
-                )
                 _DEPRECATION_WARNED = True
             return
-        log.warning('[stats-auth] Bearer token rejected — not a monitoring user')
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_MONITORING)
-
-    log.warning('[stats-auth] Request rejected — no X-API-Key and no Bearer token supplied')
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=MISSING_AUTH_MSG)
 
 

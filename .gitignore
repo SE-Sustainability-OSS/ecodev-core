@@ -11,12 +11,11 @@ venv/
 # Ignoring files other than code
 *.png
 *.xlsx
-# Ignoring notebooks (except tracked notebooks/)
+# Ignoring notebooks
 .ipynb
 .ipynb_checkpoints
 *.ipynb
 *.ipynb_checkpoints
-!notebooks/*.ipynb
 # ignoring data
 data/
 db_data/

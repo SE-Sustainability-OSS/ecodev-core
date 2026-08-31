@@ -17,4 +17,3 @@ python-multipart==0.*
 sqlmodel==0.*
 sqladmin==0.15.2
 requests==2.*
-plotly==5.*

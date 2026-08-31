@@ -59,7 +59,6 @@ def upsert_remote_activities(
     Inserts remote activity rows.  Call after `delete_lookback_activities` to avoid duplicates.
     """
     ingested_at = datetime.utcnow()
-    hours = sorted({a.hour for a in activities}) if activities else []
     for item in activities:
         session.add(RemoteHourlyActivity(
             application=application,
@@ -70,11 +69,6 @@ def upsert_remote_activities(
             ingested_at=ingested_at,
         ))
     session.commit()
-    log.info('[consumer-ingest] upserted %d activity rows for %s  '
-             'hour_range=[%s, %s]',
-             len(activities), application,
-             hours[0] if hours else None,
-             hours[-1] if hours else None)
 
 
 def upsert_remote_projects(
@@ -100,6 +94,3 @@ def upsert_remote_projects(
             ingested_at=ingested_at,
         ))
     session.commit()
-    sample = projects[0].name if projects else None
-    log.info('[consumer-ingest] upserted %d project rows for %s  sample_name=%s',
-             len(projects), application, sample)

@@ -18,9 +18,6 @@ from ecodev_core.logger import logger_get
 log = logger_get(__name__)
 DEFAULT_PAGE_SIZE = 500
 
-_HOUR_TRUNC = text("date_trunc('hour', app_activity.created_at)")
-
-
 def get_activities(
         session: Session,
         from_date: datetime | None = None,
@@ -77,9 +74,6 @@ def get_activities(
     ]
     next_from_date = rows[page_size - 1].hour if has_more and items else None
 
-    log.info('[activity-export] query window from_date=%s to_date=%s method=%s  '
-             'raw_rows=%d  page_items=%d  has_more=%s  next_from_date=%s',
-             from_date, to_date, method, len(rows), len(items), has_more, next_from_date)
     return PagedResponse(items=items, next_from_date=next_from_date)
 
 
