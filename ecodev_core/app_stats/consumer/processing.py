@@ -1,7 +1,6 @@
 """
 Retrievers that return DataFrames from consumer tables for downstream aggregation.
 """
-import json
 from datetime import datetime
 
 import pandas as pd
@@ -16,7 +15,7 @@ _ACTIVITY_COLS = [
     'application', 'hour', 'user_email', 'method', 'activity_count', 'ingested_at',
 ]
 _PROJECT_COLS = [
-    'application', 'project_id', 'name', 'creator', 'members',
+    'application', 'project_id', 'name', 'creator',
     'created_at', 'modified_at', 'description', 'client', 'project_type',
 ]
 
@@ -64,8 +63,7 @@ def get_projects_df(
 ) -> pd.DataFrame:
     """
     Returns a DataFrame of remote project rows.
-    The `members` column is decoded from JSON back to a list.
-    Columns: application, project_id, name, creator, members, created_at, modified_at,
+    Columns: application, project_id, name, creator, created_at, modified_at,
              description, client, project_type.
     """
     stmt = select(RemoteAppProject)
@@ -83,7 +81,6 @@ def get_projects_df(
                 'project_id': r.project_id,
                 'name': r.name,
                 'creator': r.creator,
-                'members': json.loads(r.members) if r.members else [],
                 'created_at': r.created_at,
                 'modified_at': r.modified_at,
                 'description': r.description,

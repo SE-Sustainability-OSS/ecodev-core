@@ -64,16 +64,10 @@ def _list_projects(
         stmt = stmt.where(col(Project.created_at) < to_date)
 
     for project in session.exec(stmt).all():
-        members = session.exec(
-            select(ProjectAccess.user).where(
-                col(ProjectAccess.project_id) == project.id
-            )
-        ).all()
         yield ProjectExport(
             project_id=str(project.id),
             name=project.name,
             creator=project.user,
-            members=list(members),
             created_at=project.created_at,
             modified_at=project.modified_at,
             description=getattr(project, 'description', None),

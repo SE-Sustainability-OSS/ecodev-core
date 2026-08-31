@@ -257,7 +257,6 @@ class AppStatsConsumerTest(SafeTestCase):
                 project_id='proj-001',
                 name='Carbon Audit',
                 creator='alice@example.com',
-                members=['alice@example.com'],
                 created_at=datetime(2026, 1, 10, 9, 0, 0),
                 project_type='pcf_only',
             )
@@ -307,7 +306,7 @@ class AppStatsConsumerTest(SafeTestCase):
 
         self.assertEqual(len(df), 1)
         self.assertEqual(df['project_id'].iloc[0], 'proj-001')
-        self.assertIsInstance(df['members'].iloc[0], list)
+        self.assertEqual(df['creator'].iloc[0], 'alice@example.com')
 
     def test_project_delete_then_upsert_idempotent(self):
         projects = self._sample_projects()
@@ -345,7 +344,6 @@ class AppStatsContractTest(SafeTestCase):
             project_id='abc-123',
             name='Test Project',
             creator='owner@test.com',
-            members=['owner@test.com', 'member@test.com'],
             created_at=datetime(2026, 1, 1, 0, 0, 0),
             project_type='both',
         )

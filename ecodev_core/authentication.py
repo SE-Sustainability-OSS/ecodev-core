@@ -26,6 +26,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from ecodev_core.app_user import AppUser
+from ecodev_core.app_user import select_user_by_id
 from ecodev_core.auth_configuration import ALGO
 from ecodev_core.auth_configuration import EXPIRATION_LENGTH
 from ecodev_core.auth_configuration import SECRET_KEY
@@ -78,7 +79,7 @@ def get_app_services(user: AppUser, session: Session) -> List[str]:
     """
     Retrieve all app services the passed user has access to
     """
-    if db_user := session.exec(select(AppUser).where(col(AppUser.id) == user.id)).first():
+    if db_user := select_user_by_id(user.id, session):
         return [right.app_service for right in db_user.rights]
     return []
 
@@ -234,7 +235,7 @@ def get_current_user(token: str,
     """
     token = _verify_access_token(token, tfa_value, tfa_check)
     with Session(engine) as session:
-        return session.exec(select(AppUser).where(col(AppUser.id) == token.id)).first()
+        return select_user_by_id(token.id, session)
 
 
 def is_admin_user(token: str = Depends(SCHEME)) -> AppUser:
@@ -273,7 +274,7 @@ def upsert_new_user(token: str, user: str, password: str = '') -> None:
     """
     user_id = _verify_access_token(token).id
     with Session(engine) as session:
-        if not session.exec(select(AppUser).where(col(AppUser.id) == user_id)).first():
+        if not select_user_by_id(user_id, session):
             session.add(AppUser(user=user, password=password, permission=Permission.Consultant,
                                 id=user_id))
             session.commit()

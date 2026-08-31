@@ -3,7 +3,6 @@ Insertors and deletors for remotely ingested stats data.
 The lookback-delete-then-upsert pattern prevents stale rows from accumulating
 when a producer back-fills or corrects historical data.
 """
-import json
 from datetime import datetime
 
 from sqlmodel import col
@@ -85,7 +84,6 @@ def upsert_remote_projects(
 ) -> None:
     """
     Replaces remote project rows.  Call after `delete_lookback_projects`.
-    `members` is stored as a JSON-encoded list to avoid a separate join table.
     """
     ingested_at = datetime.utcnow()
     for item in projects:
@@ -94,7 +92,6 @@ def upsert_remote_projects(
             project_id=item.project_id,
             name=item.name,
             creator=item.creator,
-            members=json.dumps(item.members) if item.members else None,
             created_at=item.created_at,
             modified_at=item.modified_at,
             description=item.description,

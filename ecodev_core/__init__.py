@@ -16,6 +16,7 @@ from ecodev_core.app_stats import ProjectExport
 from ecodev_core.app_stats import ProjectStatsAdapter
 from ecodev_core.app_user import AppUser
 from ecodev_core.app_user import select_user
+from ecodev_core.app_user import select_user_by_id
 from ecodev_core.app_user import upsert_app_users
 from ecodev_core.auth_configuration import AUTH
 from ecodev_core.authentication import attempt_to_log
@@ -127,6 +128,7 @@ __all__ = [
     'enum_converter', 'ServerSideFilter', 'get_rows', 'count_rows', 'ServerSideField', 'get_raw_df',
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
+    'select_user_by_id',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
     'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email', 'first_func_or_default',
     'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment', 'Version',

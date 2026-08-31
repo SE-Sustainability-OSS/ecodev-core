@@ -40,7 +40,6 @@ class RemoteAppProject(SQLModel, table=True):  # type: ignore
     project_id: str = Field(index=True)
     name: Optional[str] = None
     creator: Optional[str] = None
-    members: Optional[str] = None
     created_at: Optional[datetime] = None
     modified_at: Optional[datetime] = None
     description: Optional[str] = None

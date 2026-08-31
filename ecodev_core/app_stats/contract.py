@@ -11,7 +11,6 @@ from typing import Generic
 from typing import Iterable
 from typing import TypeVar
 
-from pydantic import Field as PydanticField
 from sqlmodel import Session
 
 from ecodev_core.pydantic_utils import CustomFrozen
@@ -41,7 +40,6 @@ class ProjectExport(OrmFrozen):
     project_id: str
     name: str | None = None
     creator: str | None = None
-    members: list[str] = PydanticField(default_factory=list)
     created_at: datetime | None = None
     modified_at: datetime | None = None
     description: str | None = None
