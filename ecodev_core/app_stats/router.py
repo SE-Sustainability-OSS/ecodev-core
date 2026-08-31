@@ -14,6 +14,7 @@ from sqlmodel import Session
 
 from ecodev_core.app_stats.activity_export import get_activities
 from ecodev_core.app_stats.api_key import api_key_or_monitoring
+from ecodev_core.app_stats.constants import ACTIVITIES_TAG
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
 from ecodev_core.app_stats.contract import ProjectExport
@@ -22,7 +23,6 @@ from ecodev_core.db_connection import get_session
 from ecodev_core.logger import logger_get
 
 log = logger_get(__name__)
-_ACTIVITIES_TAG = 'App Stats'
 
 
 def get_stats_router(
@@ -41,7 +41,7 @@ def get_stats_router(
         adapter: App-supplied callable bundle for project retrieval.
         dependency: Auth dependency (default api_key_or_monitoring).
     """
-    router = APIRouter(prefix=prefix, tags=[_ACTIVITIES_TAG],
+    router = APIRouter(prefix=prefix, tags=[ACTIVITIES_TAG],
                        dependencies=[Depends(dependency)])
 
     @router.get('/activities', response_model=PagedResponse[ActivityExport])

@@ -11,12 +11,13 @@ from sqlmodel import Session
 from sqlmodel import text
 
 from ecodev_core.app_activity import AppActivity
+from ecodev_core.app_stats.constants import DEFAULT_PAGE_SIZE
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
 from ecodev_core.logger import logger_get
 
 log = logger_get(__name__)
-DEFAULT_PAGE_SIZE = 500
+
 
 def get_activities(
         session: Session,

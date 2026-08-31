@@ -8,16 +8,15 @@ from fastapi import Header
 from fastapi import HTTPException
 from fastapi import status
 
+from ecodev_core.app_stats.constants import INVALID_KEY_MSG
+from ecodev_core.app_stats.constants import INVALID_MONITORING
+from ecodev_core.app_stats.constants import MISSING_AUTH_MSG
 from ecodev_core.authentication import get_current_user
 from ecodev_core.authentication import MONITORING
 from ecodev_core.logger import logger_get
 from ecodev_core.settings import SETTINGS
 
 log = logger_get(__name__)
-
-MISSING_AUTH_MSG = 'Provide X-API-Key header or a monitoring bearer token'
-INVALID_KEY_MSG = 'Invalid API key'
-INVALID_MONITORING = 'Bearer token is not a monitoring user'
 
 _DEPRECATION_WARNED = False
 

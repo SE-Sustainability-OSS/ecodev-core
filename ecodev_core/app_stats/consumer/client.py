@@ -8,16 +8,15 @@ from typing import Generator
 
 import requests
 
+from ecodev_core.app_stats.constants import ACTIVITIES_PATH
+from ecodev_core.app_stats.constants import PROJECTS_PATH
+from ecodev_core.app_stats.constants import TIMEOUT
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
 from ecodev_core.app_stats.contract import ProjectExport
 from ecodev_core.logger import logger_get
 
 log = logger_get(__name__)
-
-TIMEOUT = 30
-ACTIVITIES_PATH = '/stats/activities'
-PROJECTS_PATH = '/stats/projects'
 
 
 class StatsApiClient:
