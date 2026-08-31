@@ -61,13 +61,8 @@ class StatsApiClient:
         """
         Yields all ActivityExport rows, following pagination until exhausted.
         """
-        params: dict = {}
-        if from_date:
-            params['from_date'] = from_date.isoformat()
-        if to_date:
-            params['to_date'] = to_date.isoformat()
-
-        yield from _follow_pages(self, ACTIVITIES_PATH, params, ActivityExport)
+        yield from _follow_pages(
+            self, ACTIVITIES_PATH, _date_params(from_date, to_date), ActivityExport)
 
     def fetch_projects(
             self,
@@ -78,19 +73,29 @@ class StatsApiClient:
         Yields all ProjectExport rows, following pagination until exhausted.
         Returns an empty generator if the remote app has no /stats/projects route (404).
         """
-        params: dict = {}
-        if from_date:
-            params['from_date'] = from_date.isoformat()
-        if to_date:
-            params['to_date'] = to_date.isoformat()
-
         try:
-            yield from _follow_pages(self, PROJECTS_PATH, params, ProjectExport)
+            yield from _follow_pages(
+                self, PROJECTS_PATH, _date_params(from_date, to_date), ProjectExport)
         except requests.HTTPError as exc:
             if exc.response is not None and exc.response.status_code == 404:
                 log.info('%s has no /stats/projects endpoint — skipping', self.base_url)
                 return
             raise
+
+
+def _date_params(
+        from_date: datetime | None,
+        to_date: datetime | None,
+) -> dict:
+    """
+    Builds the query-param dict for date-range filtering.
+    """
+    params: dict = {}
+    if from_date:
+        params['from_date'] = from_date.isoformat()
+    if to_date:
+        params['to_date'] = to_date.isoformat()
+    return params
 
 
 def _follow_pages(
