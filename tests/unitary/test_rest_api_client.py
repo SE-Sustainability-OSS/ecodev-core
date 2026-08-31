@@ -4,18 +4,18 @@ Module testing the package's rest api client
 from datetime import datetime
 from datetime import timezone
 from unittest.mock import MagicMock
-from unittest.mock import PropertyMock
 from unittest.mock import patch
+from unittest.mock import PropertyMock
 
 import requests
 
-from ecodev_core import RestApiClient
-from ecodev_core import  SafeTestCase
+import ecodev_core.rest_api_client as rac
 from ecodev_core import get_rest_api_client
 from ecodev_core import handle_response
+from ecodev_core import RestApiClient
+from ecodev_core import SafeTestCase
 from ecodev_core.auth_configuration import ALGO
 from ecodev_core.auth_configuration import SECRET_KEY
-import ecodev_core.rest_api_client as rac
 
 
 class RestApiClientFactoryTest(SafeTestCase):
@@ -110,7 +110,6 @@ class RestApiClientTokenTest(SafeTestCase):
         self.assertEqual(exp, expected_exp)
         patched_decode.assert_called_once_with('jwt-token', SECRET_KEY, algorithms=[ALGO])
 
-
     def test_get_exp_falls_back_to_current_timestamp_on_decode_failure(self):
         """
         Should fallback to current timestamp when JWT decoding fails
@@ -157,7 +156,7 @@ class RestApiClientRequestTest(SafeTestCase):
             ('put', {'url': 'http://example.com', 'data': {'x': 2}, 'params': {'c': 3}}),
             ('patch', {'url': 'http://example.com', 'data': {'x': 3}, 'params': {'d': 4}}),
             ('delete', {'url': 'http://example.com', 'params': {'e': 5}}),
-            ]
+        ]
 
         for method_name, kwargs in http_methods:
             with self.subTest(method=method_name):

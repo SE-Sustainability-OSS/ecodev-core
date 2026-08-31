@@ -1,9 +1,9 @@
 """
 Retrievers that return DataFrames from consumer tables for downstream aggregation.
 """
+import json
 from datetime import datetime
 
-import json
 import pandas as pd
 from sqlmodel import col
 from sqlmodel import select

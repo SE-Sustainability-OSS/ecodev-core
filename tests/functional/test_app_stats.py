@@ -12,7 +12,6 @@ from sqlmodel import Session
 from ecodev_core import AppActivity
 from ecodev_core import AppRight
 from ecodev_core import AppUser
-from ecodev_core import attempt_to_log
 from ecodev_core import create_db_and_tables
 from ecodev_core import delete_table
 from ecodev_core import engine
@@ -23,7 +22,6 @@ from ecodev_core import ProjectStatsAdapter
 from ecodev_core import SafeTestCase
 from ecodev_core import upsert_app_users
 from ecodev_core.app_stats.api_key import INVALID_KEY_MSG
-from ecodev_core.app_stats.api_key import MISSING_AUTH_MSG
 from ecodev_core.app_stats.consumer.ingest import delete_lookback_activities
 from ecodev_core.app_stats.consumer.ingest import delete_lookback_projects
 from ecodev_core.app_stats.consumer.ingest import upsert_remote_activities
