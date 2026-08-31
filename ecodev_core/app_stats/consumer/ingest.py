@@ -3,18 +3,17 @@ Insertors and deletors for remotely ingested stats data.
 The lookback-delete-then-upsert pattern prevents stale rows from accumulating
 when a producer back-fills or corrects historical data.
 """
+import json
 from datetime import datetime
 
-import json
 from sqlmodel import col
 from sqlmodel import delete
-from sqlmodel import select
 from sqlmodel import Session
 
-from ecodev_core.app_stats.contract import ActivityExport
-from ecodev_core.app_stats.contract import ProjectExport
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
 from ecodev_core.app_stats.consumer.tables import RemoteHourlyActivity
+from ecodev_core.app_stats.contract import ActivityExport
+from ecodev_core.app_stats.contract import ProjectExport
 from ecodev_core.logger import logger_get
 
 log = logger_get(__name__)
@@ -61,6 +60,7 @@ def upsert_remote_activities(
     Inserts remote activity rows.  Call after `delete_lookback_activities` to avoid duplicates.
     """
     ingested_at = datetime.utcnow()
+    hours = sorted({a.hour for a in activities}) if activities else []
     for item in activities:
         session.add(RemoteHourlyActivity(
             application=application,
@@ -71,7 +71,11 @@ def upsert_remote_activities(
             ingested_at=ingested_at,
         ))
     session.commit()
-    log.info('Ingested %d activity rows for %s', len(activities), application)
+    log.info('[consumer-ingest] upserted %d activity rows for %s  '
+             'hour_range=[%s, %s]',
+             len(activities), application,
+             hours[0] if hours else None,
+             hours[-1] if hours else None)
 
 
 def upsert_remote_projects(
@@ -99,4 +103,6 @@ def upsert_remote_projects(
             ingested_at=ingested_at,
         ))
     session.commit()
-    log.info('Ingested %d project rows for %s', len(projects), application)
+    sample = projects[0].name if projects else None
+    log.info('[consumer-ingest] upserted %d project rows for %s  sample_name=%s',
+             len(projects), application, sample)

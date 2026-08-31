@@ -2,6 +2,7 @@
 HTTP client for polling a remote app's /stats endpoints.
 Follows `next_from_date` cursors until the page is exhausted.
 """
+import time
 from datetime import datetime
 from typing import Generator
 
@@ -41,7 +42,14 @@ class StatsApiClient:
         Raises requests.HTTPError on non-2xx responses.
         """
         url = f'{self.base_url}{path}'
+        log.info('[stats-client] GET %s  params=%s', url, params)
+        t0 = time.monotonic()
         response = requests.get(url, headers=self._headers(), params=params, timeout=TIMEOUT)
+        elapsed_ms = round((time.monotonic() - t0) * 1000)
+        log.info('[stats-client] GET %s  status=%d  size=%d bytes  elapsed_ms=%d',
+                 url, response.status_code, len(response.content), elapsed_ms)
+        if not response.ok:
+            log.error('[stats-client] Error body: %s', response.text[:500])
         response.raise_for_status()
         return response.json()
 
@@ -93,12 +101,22 @@ def _follow_pages(
 ) -> Generator:
     """
     Yields parsed model instances following `next_from_date` cursor until None.
+    Logs each page fetched with running total and cursor position.
     """
+    page_num = 0
+    total_yielded = 0
     while True:
+        page_num += 1
         raw = client.get(path, params)
         page = PagedResponse[model_class].model_validate(raw)
+        total_yielded += len(page.items)
+        log.info('[stats-client] %s  page=%d  items_this_page=%d  running_total=%d'
+                 '  next_from_date=%s',
+                 path, page_num, len(page.items), total_yielded, page.next_from_date)
         for item in page.items:
             yield model_class.model_validate(item.model_dump())
         if page.next_from_date is None:
+            log.info('[stats-client] %s  pagination complete  total_items=%d  pages=%d',
+                     path, total_yielded, page_num)
             break
         params = {**params, 'from_date': page.next_from_date.isoformat()}
