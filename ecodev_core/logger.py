@@ -76,7 +76,7 @@ class MyFormatter(logging.Formatter):
 
         # fixing max length
         limited_lines = []
-        for line in record.getMessage().split(str('\n')):
+        for line in self._full_message(record).split(str('\n')):
             while len(line) > self.message_width:
                 if (last_space_position := line[:self.message_width - 1].rfind(' ')) > 0:
                     splitting_position = last_space_position
@@ -92,6 +92,17 @@ class MyFormatter(logging.Formatter):
         final_message = ''.join(f'{prefix} | {line}\n' for line in limited_lines).rstrip()
 
         return f'{self.FORMATS[record.levelno]}{final_message}{self.reset}'
+
+    def _full_message(self, record) -> str:
+        """
+        Appends the traceback and stack info attached to the record, if any.
+        """
+        parts = [record.getMessage()]
+        if record.exc_info:
+            parts.append(self.formatException(record.exc_info))
+        if record.stack_info:
+            parts.append(self.formatStack(record.stack_info))
+        return '\n'.join(parts)
 
 
 def config_log(logger, level, formatter):
