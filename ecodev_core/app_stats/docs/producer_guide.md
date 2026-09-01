@@ -134,8 +134,44 @@ deliberately limit it to the actions that provide signal.
 registry.  The monitoring JWT fallback is accepted for one release only and will be
 removed in a future version.
 
-To provision a key:
+### Generating and provisioning a key
 
-1. Generate a random secret: `python -c "import secrets; print(secrets.token_hex(32))"`
-2. Set it in the consumer's env as `CF_TOOL_API_KEY` (or similar).
-3. Set the same value in `config/local.yaml` under `stats_api.api_key`.
+**Step 1 — Generate a cryptographically random secret**
+
+Run once per environment (local, preprod, prod):
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+This produces a 64-character hex string, e.g.:
+```
+a3f8e2c17b094d56a1e3f72c84d09b351f4a8e6c2d07b3a91e4f52c86d0a7b3
+```
+
+**Step 2 — Set the key on the producer side**
+
+Place the generated value in every environment config under `stats_api.api_key`:
+
+```yaml
+# config/local.yaml  (or preprod.yaml / prod.yaml)
+stats_api:
+  api_key: "a3f8e2c17b094d56a1e3f72c84d09b351f4a8e6c2d07b3a91e4f52c86d0a7b3"
+```
+
+> **Security note**: never commit real keys to version control.  Inject them via
+> environment variable or a secrets manager and reference them from the YAML with
+> `${ENV_VAR}` substitution if your config loader supports it.
+
+**Step 3 — Set the same key on the consumer side**
+
+The consumer (e.g. `ecoact-myecoapps` or `ecoact-cf-tool`) stores the key in its own
+`.env` under a name matching the registry entry, e.g.:
+
+```bash
+# .env on the consumer app
+CF_TOOL_API_KEY="a3f8e2c17b094d56a1e3f72c84d09b351f4a8e6c2d07b3a91e4f52c86d0a7b3"
+```
+
+Each producer–consumer pair uses its **own** independent key; do not reuse a key across
+multiple producer apps.

@@ -59,6 +59,7 @@ async def api_key_or_monitoring(
 
     if x_api_key is not None:
         if configured_key and secrets.compare_digest(x_api_key, configured_key):
+            log.debug('Auth: X-API-Key accepted (%s)', _mask_secret(x_api_key))
             return
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_KEY_MSG)
 
@@ -68,6 +69,7 @@ async def api_key_or_monitoring(
         if user and user.user == MONITORING:
             if not _DEPRECATION_WARNED:
                 _DEPRECATION_WARNED = True
+            log.debug('Auth: monitoring JWT fallback accepted (deprecated)')
             return
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_MONITORING)
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=MISSING_AUTH_MSG)

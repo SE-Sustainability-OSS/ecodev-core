@@ -49,6 +49,27 @@ STATS_REGISTRY = [
 ]
 ```
 
+> **Production note — which URL to use**
+>
+> The `/stats/*` routes are part of the **FastAPI** backend, not the Dash frontend.
+> In production, only two addresses are reachable from the outside:
+>
+> | Setting | Address |
+> |---|---|
+> | `fastapi_url` | public FastAPI backend — **use this** |
+> | `dash_url` | public Dash UI — do not use for API calls |
+>
+> Set `CF_TOOL_BASE_URL` (and equivalent vars) to the producer's `fastapi_url` in
+> `.env` / your secrets manager.  The Docker service name defaults
+> (`http://carbon_footprint_backend:80`) only work when both apps share the same
+> compose network (local or same-host staging).
+>
+> ```bash
+> # .env on the consumer app (production)
+> CF_TOOL_BASE_URL="https://cf-tool.example.com"
+> MYECOACT_BASE_URL="https://myecoact.example.com"
+> ```
+
 ---
 
 ## 3. Write the ingest command

@@ -75,6 +75,8 @@ def get_activities(
     ]
     next_from_date = rows[page_size - 1].hour if has_more and items else None
 
+    log.debug('get_activities: %d items returned, has_more=%s, next=%s',
+              len(items), has_more, next_from_date)
     return PagedResponse(items=items, next_from_date=next_from_date)
 
 

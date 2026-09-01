@@ -41,7 +41,11 @@ class StatsApiClient:
         Raises requests.HTTPError on non-2xx responses.
         """
         url = f'{self.base_url}{path}'
+        t0 = time.perf_counter()
+        log.debug('stats-api GET %s params=%s', url, params)
         response = requests.get(url, headers=self._headers(), params=params, timeout=TIMEOUT)
+        log.info('stats-api GET %s → HTTP %d (%.0f ms)',
+                 url, response.status_code, (time.perf_counter() - t0) * 1000)
         response.raise_for_status()
         return response.json()
 
@@ -102,13 +106,18 @@ def _follow_pages(
     """
     page_num = 0
     total_yielded = 0
+    t0 = time.perf_counter()
     while True:
         page_num += 1
         raw = client.get(path, params)
         page = PagedResponse[model_class].model_validate(raw)
         total_yielded += len(page.items)
+        log.info('stats-api page %d — %d items (total so far: %d)', page_num, len(page.items),
+                 total_yielded)
         for item in page.items:
             yield model_class.model_validate(item.model_dump())
         if page.next_from_date is None:
+            log.info('stats-api pagination done — %d items in %d page(s) (%.1fs)',
+                     total_yielded, page_num, time.perf_counter() - t0)
             break
         params = {**params, 'from_date': page.next_from_date.isoformat()}
