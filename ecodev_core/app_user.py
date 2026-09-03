@@ -90,3 +90,15 @@ def select_user(username: str, session: Session) -> AppUser:
         sqlalchemy.exc.MultipleResultsFound: Should normally never be an issue.
     """
     return session.exec(select(AppUser).where(col(AppUser.user) == username)).one()
+
+
+def select_user_by_id(user_id: Optional[int], session: Session) -> Optional[AppUser]:
+    """
+    Helper function to (attempt to) retrieve AppUser from its primary key.
+
+    NB: unlike select_user, returns None instead of raising when no user matches,
+    and accepts a None id so callers do not have to guard beforehand.
+    """
+    if user_id is None:
+        return None
+    return session.exec(select(AppUser).where(col(AppUser.id) == user_id)).first()

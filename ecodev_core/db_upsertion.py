@@ -364,13 +364,14 @@ def _python_default_to_sql(value: Any, sql_type: str) -> str:
 
 def _py_type_to_sql(col_type: type) -> str:
     """
-    Convert a python type to a sql one. Only working for (as of 2025/10/01):
+    Convert a python type to a sql one. Only working for:
     - int
     - float
     - str
     - bool
     - bytes
-    - jsonB
+    - dict (JSONB)
+    - datetime (TIMESTAMP)
     - Enum
     NB: for enum, assumes type is already created in DB
     """
@@ -386,6 +387,8 @@ def _py_type_to_sql(col_type: type) -> str:
         return 'BYTEA'
     if col_type is dict:
         return 'JSONB'
+    if col_type is datetime:
+        return 'TIMESTAMP'
     if hasattr(col_type, '__members__'):
         return col_type.__name__.lower()
     raise ValueError(f'Unsupported column type: {col_type}')
