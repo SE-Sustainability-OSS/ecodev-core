@@ -8,7 +8,7 @@ from ecodev_core.app_activity import get_method
 from ecodev_core.app_activity import get_recent_activities
 from ecodev_core.app_rights import AppRight
 from ecodev_core.app_stats import ActivityExport
-from ecodev_core.app_stats import api_key_or_monitoring
+from ecodev_core.app_stats import api_key_auth
 from ecodev_core.app_stats import get_activities
 from ecodev_core.app_stats import get_stats_router
 from ecodev_core.app_stats import PagedResponse
@@ -139,4 +139,4 @@ __all__ = [
     'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient', 'handle_response',
     'batch_sequence', 'PostGisSafeTestCase',
     'ActivityExport', 'ProjectExport', 'PagedResponse', 'ProjectStatsAdapter',
-    'get_activities', 'api_key_or_monitoring', 'get_stats_router']
+    'get_activities', 'api_key_auth', 'get_stats_router']

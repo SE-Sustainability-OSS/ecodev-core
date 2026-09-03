@@ -20,8 +20,8 @@ from ecodev_core.app_stats.consumer import (
     delete_lookback_projects,
     upsert_remote_activities,
     upsert_remote_projects,
-    get_activities_df,
-    get_projects_df,
+    get_remote_activities,
+    get_remote_projects,
 )
 ```
 
@@ -32,7 +32,7 @@ creates them.
 
 ## 2. Add a producer registry
 
-In `app/constants.py` (following the existing `CDP_API_URL` convention):
+In `app/constants.py`:
 
 ```python
 import os
@@ -44,31 +44,17 @@ MYECOACT_BASE_URL = os.getenv('MYECOACT_BASE_URL', 'http://my_ecoact_backend:80'
 MYECOACT_API_KEY  = os.getenv('MYECOACT_API_KEY', '')
 
 STATS_REGISTRY = [
-    {'name': 'cf_tool',   'base_url': CF_TOOL_BASE_URL,   'api_key': CF_TOOL_API_KEY},
-    {'name': 'my_ecoact', 'base_url': MYECOACT_BASE_URL,   'api_key': MYECOACT_API_KEY},
+    {'name': 'cf_tool',   'base_url': CF_TOOL_BASE_URL,  'api_key': CF_TOOL_API_KEY},
+    {'name': 'my_ecoact', 'base_url': MYECOACT_BASE_URL, 'api_key': MYECOACT_API_KEY},
 ]
+
+STATS_LOOKBACK_HOURS = 24
+STATS_BACKFILL_DAYS  = 400
 ```
 
-> **Production note — which URL to use**
->
-> The `/stats/*` routes are part of the **FastAPI** backend, not the Dash frontend.
-> In production, only two addresses are reachable from the outside:
->
-> | Setting | Address |
-> |---|---|
-> | `fastapi_url` | public FastAPI backend — **use this** |
-> | `dash_url` | public Dash UI — do not use for API calls |
->
-> Set `CF_TOOL_BASE_URL` (and equivalent vars) to the producer's `fastapi_url` in
-> `.env` / your secrets manager.  The Docker service name defaults
-> (`http://carbon_footprint_backend:80`) only work when both apps share the same
-> compose network (local or same-host staging).
->
-> ```bash
-> # .env on the consumer app (production)
-> CF_TOOL_BASE_URL="https://cf-tool.example.com"
-> MYECOACT_BASE_URL="https://myecoact.example.com"
-> ```
+> **Production note:** The `/stats/*` routes are part of the **FastAPI** backend.
+> Set `CF_TOOL_BASE_URL` etc. to the producer's `fastapi_url` in `.env`.  The Docker
+> service name defaults only work when both apps share the same compose network.
 
 ---
 
@@ -79,23 +65,23 @@ STATS_REGISTRY = [
 from datetime import datetime, timedelta
 
 from sqlmodel import Session
-
 from ecodev_core import engine
 from ecodev_core.app_stats.consumer import (
     StatsApiClient,
     delete_lookback_activities, delete_lookback_projects,
     upsert_remote_activities, upsert_remote_projects,
 )
-from app.constants import STATS_REGISTRY
-
-LOOKBACK_DAYS = 400
+from app.constants import STATS_REGISTRY, STATS_LOOKBACK_HOURS
 
 
-def run_ingest() -> None:
-    lookback = datetime.utcnow() - timedelta(days=LOOKBACK_DAYS)
+def run_ingest(lookback: datetime | None = None) -> None:
+    if lookback is None:
+        lookback = datetime.utcnow().replace(minute=0, second=0, microsecond=0) \
+                   - timedelta(hours=STATS_LOOKBACK_HOURS)
+
     with Session(engine) as session:
         for entry in STATS_REGISTRY:
-            client = StatsApiClient(entry['base_url'], entry['api_key'])
+            client = StatsApiClient(base_url=entry['base_url'], api_key=entry['api_key'])
             app_name = entry['name']
 
             activities = list(client.fetch_activities(from_date=lookback))
@@ -107,57 +93,55 @@ def run_ingest() -> None:
             upsert_remote_projects(session, app_name, projects)
 ```
 
+The same `lookback` value is passed to both `fetch_activities` and `delete_lookback_activities`.
+This is intentional: the delete scope matches the fetch scope exactly, so a re-run of the
+same window replaces identical data (idempotent).
+
 ---
 
-## 4. Schedule the ingest with Ofelia
+## 4. Onboarding a new producer
+
+The rolling 24-hour window does **not** automatically back-fill history.  When adding a new
+producer for the first time, run a one-off backfill command before the next cron fires:
+
+```bash
+# Back-fill 400 days of history
+python -m app.typer_app ingest-remote-analytics --backfill
+
+# Or specify an explicit window
+python -m app.typer_app ingest-remote-analytics --lookback-hours 720
+```
+
+---
+
+## 5. Schedule the ingest with Ofelia
 
 In `docker-compose.yml`, add Ofelia labels to the app service:
 
 ```yaml
 labels:
   ofelia.enabled: "true"
-  ofelia.job-exec.ingest-remote-analytics.schedule: "0 0 */6 * * *"
-  ofelia.job-exec.ingest-remote-analytics.command: "python -m app.methodo.app_stats.ingest"
+  ofelia.job-exec.ingest-remote-analytics.schedule: "0 0 3 * * *"
+  ofelia.job-exec.ingest-remote-analytics.command: "python -m app.typer_app ingest-remote-analytics"
 ```
 
-This runs every 6 hours.  The 400-day lookback window ensures back-filled or corrected
-rows are picked up on the next cycle.
+This runs nightly at 03:00, a quiet window that avoids active-user overlap so no overlap
+margin is needed.  History already stored outside the 24-hour window is **retained** —
+`delete_lookback_activities` only removes rows at or after `lookback`.
 
 ---
 
-## 5. Pre-aggregation mart (`analytics_hourly_fact`)
+## 6. Reading ingested data
 
-The mart lives in the consumer app, not in `ecodev_core`.  Build it from the union of
-local `AppActivity` and `RemoteHourlyActivity` after each ingest cycle.
-
-Suggested grain: `(hour, user_email, application, method, relevant_option)` with
-`activity_count`.  Keep `user_email` in the grain — seven of the eleven analytics charts
-need `count(distinct user_email)`, which cannot be recovered from summed rows.
-
-`rbu` and `team` are joined from `app_user_profile` at query time (not denormalised),
-so a profile edit is reflected immediately without a mart rebuild.
-
----
-
-## 6. Chart retrievers
-
-Place all chart queries behind thin retriever functions in
-`app/db_model/retrievers/analytics.py`.  This keeps the storage engine swappable
-(revisit DuckDB past ~50 M fact rows) and keeps callbacks free of SQL.
+Both helpers return `list[dict]`, which callers can pass directly to `pd.DataFrame`:
 
 ```python
-# app/db_model/retrievers/analytics.py
-from sqlmodel import func, col, select, Session
-from app.db_model import AnalyticsHourlyFact
+import pandas as pd
+from ecodev_core.app_stats.consumer import get_remote_activities, get_remote_projects
 
-def monthly_unique_users(session: Session) -> list[tuple]:
-    return session.exec(
-        select(
-            func.date_trunc('month', col(AnalyticsHourlyFact.hour)).label('month'),
-            func.count(func.distinct(col(AnalyticsHourlyFact.user_email))).label('users'),
-        ).group_by(func.date_trunc('month', col(AnalyticsHourlyFact.hour)))
-        .order_by(func.date_trunc('month', col(AnalyticsHourlyFact.hour)))
-    ).all()
+with Session(engine) as session:
+    df_activities = pd.DataFrame(get_remote_activities(session, application='cf_tool'))
+    df_projects   = pd.DataFrame(get_remote_projects(session))
 ```
 
 ---
@@ -165,7 +149,6 @@ def monthly_unique_users(session: Session) -> list[tuple]:
 ## 7. Cross-references
 
 - Producer guide: `docs/producer_guide.md`
-- Demo notebook: `notebooks/app_stats_demo.ipynb`
 - Consumer tables: `ecodev_core/app_stats/consumer/tables.py`
 - Ingest helpers: `ecodev_core/app_stats/consumer/ingest.py`
-- DataFrame helpers: `ecodev_core/app_stats/consumer/processing.py`
+- Dict helpers: `ecodev_core/app_stats/consumer/processing.py`

@@ -10,8 +10,8 @@ from ecodev_core.app_stats.consumer.ingest import delete_lookback_activities
 from ecodev_core.app_stats.consumer.ingest import delete_lookback_projects
 from ecodev_core.app_stats.consumer.ingest import upsert_remote_activities
 from ecodev_core.app_stats.consumer.ingest import upsert_remote_projects
-from ecodev_core.app_stats.consumer.processing import get_activities_df
-from ecodev_core.app_stats.consumer.processing import get_projects_df
+from ecodev_core.app_stats.consumer.processing import get_remote_activities
+from ecodev_core.app_stats.consumer.processing import get_remote_projects
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
 from ecodev_core.app_stats.consumer.tables import RemoteHourlyActivity
 
@@ -23,6 +23,6 @@ __all__ = [
     'delete_lookback_projects',
     'upsert_remote_activities',
     'upsert_remote_projects',
-    'get_activities_df',
-    'get_projects_df',
+    'get_remote_activities',
+    'get_remote_projects',
 ]

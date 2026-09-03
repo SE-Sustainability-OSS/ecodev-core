@@ -11,6 +11,11 @@ ACTIVITIES_TAG = 'App Stats'
 
 DEFAULT_PAGE_SIZE = 500
 
-MISSING_AUTH_MSG = 'Provide X-API-Key header or a monitoring bearer token'
+MISSING_AUTH_MSG = 'Provide X-API-Key header'
 INVALID_KEY_MSG = 'Invalid API key'
-INVALID_MONITORING = 'Bearer token is not a monitoring user'
+
+FROM_DATE = 'from_date'
+TO_DATE = 'to_date'
+API_KEY_HEADER = 'X-API-Key'
+ACCEPT_HEADER = 'Accept'
+JSON_MIME = 'application/json'

@@ -28,12 +28,14 @@ class RestApiClient(BaseModel):
     Client for making calls to internal REST API endpoints.
 
     Attributes:
+        base_url: Root URL of the API host (used by subclasses to build request URLs).
         _token (dict): Last fetched authentication token.
 
     NB:
         - When using this class, tokens should be accessed using the property `token` and \
             not `_token` to enforce token auto-refresh and avoid using expired auth. tokens.
     """
+    base_url: str = ''
     _token: dict = {}
 
     def _get_new_token(self) -> dict:
