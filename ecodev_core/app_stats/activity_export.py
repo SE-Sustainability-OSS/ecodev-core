@@ -5,6 +5,7 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 
+from sqlalchemy import literal
 from sqlmodel import col
 from sqlmodel import func
 from sqlmodel import select
@@ -24,6 +25,8 @@ def get_activities(
         method: str | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
         granularity: str = HOUR_GRAIN,
+        group_by_method: bool = True,
+        group_by_application: bool = True,
 ) -> PagedResponse[ActivityExport]:
     """
     Returns a page of time-bucketed activity rows, ordered ascending by period_start.
@@ -32,25 +35,38 @@ def get_activities(
     `unique_users` is computed server-side — user identity is never included in the response.
     Pass `next_from_date` from the previous response as `from_date` to advance the cursor.
 
+    `unique_users` is a distinct count, so it is additive across the returned rows only
+    when every dimension a user can span has been collapsed: a user appears once in each
+    method row they touched and each application row they touched, so summing a split
+    response overstates the total.  Callers that intend to sum it should pass
+    `group_by_method=False` and `group_by_application=False`, which collapses the
+    corresponding column to '' and emits a single row per period.
+
     `next_from_date` is always the first bucket NOT yet emitted so the next request picks up
     exactly where this page ended without re-fetching any row.  If a single bucket exceeds
     `page_size`, all rows for that bucket are emitted and `next_from_date` is set to
     `bucket_start + one_period` to guarantee forward progress.
     """
+    period = func.date_trunc(granularity, col(AppActivity.created_at))
+    application = func.coalesce(col(AppActivity.application), '')
+    method = func.coalesce(col(AppActivity.method), '')
+
+    group_cols = [period]
+    if group_by_application:
+        group_cols.append(application)
+    if group_by_method:
+        group_cols.append(method)
+
     stmt = (
         select(
-            func.coalesce(col(AppActivity.application), '').label('application'),
-            func.date_trunc(granularity, col(AppActivity.created_at)).label('period_start'),
-            func.coalesce(col(AppActivity.method), '').label('method'),
+            (application if group_by_application else literal('')).label('application'),
+            period.label('period_start'),
+            (method if group_by_method else literal('')).label('method'),
             func.count().label('activity_count'),
             func.count(func.distinct(col(AppActivity.user))).label('unique_users'),
         )
-        .group_by(
-            func.coalesce(col(AppActivity.application), ''),
-            func.date_trunc(granularity, col(AppActivity.created_at)),
-            func.coalesce(col(AppActivity.method), ''),
-        )
-        .order_by(func.date_trunc(granularity, col(AppActivity.created_at)))
+        .group_by(*group_cols)
+        .order_by(period)
     )
 
     if from_date is not None:

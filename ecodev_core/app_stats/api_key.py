@@ -20,10 +20,12 @@ async def api_key_auth(
     Validates the X-API-Key header against SETTINGS.stats_api.api_key.
     Raises HTTP 401 when the header is absent or the key does not match.
     """
+    configured_key = _configured_api_key()
+    if not configured_key:
+        return
     if x_api_key is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=MISSING_AUTH_MSG)
-    configured_key = _configured_api_key()
-    if configured_key and secrets.compare_digest(x_api_key, configured_key):
+    if secrets.compare_digest(x_api_key, configured_key):
         return
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=INVALID_KEY_MSG)
 

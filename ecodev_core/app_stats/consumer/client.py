@@ -17,6 +17,8 @@ from ecodev_core.app_stats.constants import ACTIVITIES_PATH
 from ecodev_core.app_stats.constants import API_KEY_HEADER
 from ecodev_core.app_stats.constants import FROM_DATE
 from ecodev_core.app_stats.constants import GRANULARITY
+from ecodev_core.app_stats.constants import GROUP_BY_APPLICATION
+from ecodev_core.app_stats.constants import GROUP_BY_METHOD
 from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.app_stats.constants import JSON_MIME
 from ecodev_core.app_stats.constants import PROJECTS_PATH
@@ -47,14 +49,20 @@ class StatsApiClient(RestApiClient):
             from_date: datetime | None = None,
             to_date: datetime | None = None,
             granularity: str = HOUR_GRAIN,
+            group_by_method: bool = True,
+            group_by_application: bool = True,
     ) -> Generator[ActivityExport, None, None]:
         """
         Yields all ActivityExport rows for the given granularity, following pagination.
         Tolerates no error status: /stats/activities is always registered, so any failure
         means the producer is unreachable and must not be mistaken for "no activity".
+
+        Clear both group_by flags when the caller intends to sum `unique_users`.
         """
         yield from _follow_pages(self, ACTIVITIES_PATH, from_date, to_date,
-                                 granularity, ActivityExport, tolerate=())
+                                 granularity, ActivityExport, tolerate=(),
+                                 group_by_method=group_by_method,
+                                 group_by_application=group_by_application)
 
     def fetch_projects(
             self,
@@ -99,6 +107,8 @@ def _build_url(
         from_date: datetime | None = None,
         to_date: datetime | None = None,
         granularity: str = HOUR_GRAIN,
+        group_by_method: bool = True,
+        group_by_application: bool = True,
 ) -> str:
     """Builds the request URL with optional query args embedded directly."""
     url = f'{base_url}{path}'
@@ -109,6 +119,10 @@ def _build_url(
         parts.append(f'{TO_DATE}={quote(to_date.isoformat())}')
     if granularity != HOUR_GRAIN:
         parts.append(f'{GRANULARITY}={quote(granularity)}')
+    if not group_by_method:
+        parts.append(f'{GROUP_BY_METHOD}=false')
+    if not group_by_application:
+        parts.append(f'{GROUP_BY_APPLICATION}=false')
     if parts:
         url = f'{url}?{"&".join(parts)}'
     return url
@@ -124,7 +138,7 @@ def _get_json(
     Single door for both endpoints so their error policy is visible at each call site.
     """
     try:
-        return client.get(url)
+        return client.get(url, expected_statuses=tolerate)
     except requests.HTTPError as exc:
         if exc.response is not None and exc.response.status_code in tolerate:
             return None
@@ -139,13 +153,16 @@ def _follow_pages(
         granularity: str,
         model_class: type,
         tolerate: tuple[HTTPStatus, ...],
+        group_by_method: bool = True,
+        group_by_application: bool = True,
 ) -> Generator:
     """
     Yields parsed model instances following `next_from_date` cursor until None.
     Stops silently if a response status is one of `tolerate`.
     """
     while True:
-        url = _build_url(client.base_url, path, from_date, to_date, granularity)
+        url = _build_url(client.base_url, path, from_date, to_date, granularity,
+                         group_by_method, group_by_application)
         raw = _get_json(client, url, tolerate)
         if raw is None:
             return

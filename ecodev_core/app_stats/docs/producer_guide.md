@@ -113,13 +113,13 @@ Rows are aggregated server-side by `(application, period_start, method)` with `c
 as `activity_count` and `count(distinct user)` as `unique_users`.  No raw user identity
 crosses the wire.
 
-| Query parameter | Type | Default | Description |
-|---|---|---|---|
-| `from_date` | ISO-8601 datetime | — | Inclusive bucket start filter |
-| `to_date` | ISO-8601 datetime | — | Exclusive bucket end filter |
-| `method` | string | — | Filter to a single method name |
-| `page_size` | int (1–5000) | 500 | Max rows per page |
-| `granularity` | `hour` or `month` | `hour` | Bucket size for `date_trunc` |
+| Query parameter | Type                  | Default  | Description                    |
+| --------------- | --------------------- | -------- | ------------------------------ |
+| `from_date`   | ISO-8601 datetime     | —       | Inclusive bucket start filter  |
+| `to_date`     | ISO-8601 datetime     | —       | Exclusive bucket end filter    |
+| `method`      | string                | —       | Filter to a single method name |
+| `page_size`   | int (1–5000)         | 500      | Max rows per page              |
+| `granularity` | `hour` or `month` | `hour` | Bucket size for`date_trunc`  |
 
 The response envelope is:
 
@@ -143,10 +143,10 @@ When no adapter is supplied the route is not registered at all and returns **404
 a valid opt-out, not an error: the consumer client treats it as "this producer has no
 projects" and leaves any previously stored rows untouched.
 
-| Query parameter | Type | Default | Description |
-|---|---|---|---|
-| `from_date` | ISO-8601 datetime | — | Filter by `modified_at >= from_date` |
-| `to_date` | ISO-8601 datetime | — | Filter by `modified_at < to_date` |
+| Query parameter | Type              | Default | Description                           |
+| --------------- | ----------------- | ------- | ------------------------------------- |
+| `from_date`   | ISO-8601 datetime | —      | Filter by`modified_at >= from_date` |
+| `to_date`     | ISO-8601 datetime | —      | Filter by`modified_at < to_date`    |
 
 ---
 

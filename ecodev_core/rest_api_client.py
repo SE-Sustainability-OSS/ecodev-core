@@ -97,19 +97,23 @@ class RestApiClient(BaseModel):
     def get(self,
             url: str,
             params: Optional[dict] = None,
-            timeout: Optional[int] = 30):
+            timeout: Optional[int] = 30,
+            expected_statuses: tuple[int, ...] = ()):
         """
         Attributes:
             url (str): Url of the HTTP request
             params (Optional[dict] = None): Query parameters to add to the url. \
                 Defaults to None.
             timeout (Optional[int]): HTTP connection timeout. Defaults to 30 (sec).
+            expected_statuses (tuple[int, ...]): Error statuses the caller handles \
+                itself, kept out of the error log. Defaults to ().
 
         Returns:
             response_data (Any): Response body
         """
         return handle_response(requests.get(url=url, headers=self._get_header(),
-                                            timeout=timeout, params=params))
+                                            timeout=timeout, params=params),
+                               expected_statuses=expected_statuses)
 
     def post(self,
              url: str,
@@ -186,12 +190,16 @@ class RestApiClient(BaseModel):
                                                timeout=timeout, params=params))
 
 
-def handle_response(response: requests.Response):
+def handle_response(response: requests.Response,
+                    expected_statuses: tuple[int, ...] = ()):
     """
     Extracts the data from the http response object
 
     Attributes:
         response (requests.Response): HTTP response object to handle
+        expected_statuses (tuple[int, ...]): Error statuses the caller handles itself. \
+            These still raise, so the caller keeps its control flow, but are not logged \
+            as errors — the caller is expected to report the outcome it derives from them.
 
     Raises:
         HTTPError: If the HTTP request returned an unsuccessful status code.
@@ -205,7 +213,8 @@ def handle_response(response: requests.Response):
         response_body = response.json()
         return response_body
     except requests.HTTPError as http_exception:
-        log.error(f'Error {response.status_code} : {response.text}')
+        if response.status_code not in expected_statuses:
+            log.error(f'Error {response.status_code} : {response.text}')
         raise http_exception
     except Exception as e:
         log.error('Failed to parse response body')

@@ -56,12 +56,16 @@ def _activities_endpoint(
         method: str | None = Query(default=None),
         page_size: int = Query(default=500, ge=1, le=5000),
         granularity: str = Query(default='hour', pattern='^(hour|month)$'),
+        group_by_method: bool = Query(default=True),
+        group_by_application: bool = Query(default=True),
         session: Session = Depends(get_session),
 ) -> PagedResponse[ActivityExport]:
     """
     Returns a page of time-bucketed activity rows, ordered ascending by period_start.
     Pass `next_from_date` from the previous response as `from_date` to advance the cursor.
     Use `granularity=month` for monthly-grain data with pre-aggregated `unique_users`.
+    Pass `group_by_method=false&group_by_application=false` to get one row per period
+    whose `unique_users` is additive across rows.
     """
     return get_activities(
         session=session,
@@ -70,6 +74,8 @@ def _activities_endpoint(
         method=method,
         page_size=page_size,
         granularity=granularity,
+        group_by_method=group_by_method,
+        group_by_application=group_by_application,
     )
 
 
