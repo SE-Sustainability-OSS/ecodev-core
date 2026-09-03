@@ -48,20 +48,20 @@ def get_activities(
     `bucket_start + one_period` to guarantee forward progress.
     """
     period = func.date_trunc(granularity, col(AppActivity.created_at))
-    application = func.coalesce(col(AppActivity.application), '')
-    method = func.coalesce(col(AppActivity.method), '')
+    application_col = func.coalesce(col(AppActivity.application), '')
+    method_col = func.coalesce(col(AppActivity.method), '')
 
     group_cols = [period]
     if group_by_application:
-        group_cols.append(application)
+        group_cols.append(application_col)
     if group_by_method:
-        group_cols.append(method)
+        group_cols.append(method_col)
 
     stmt = (
         select(
-            (application if group_by_application else literal('')).label('application'),
+            (application_col if group_by_application else literal('')).label('application'),
             period.label('period_start'),
-            (method if group_by_method else literal('')).label('method'),
+            (method_col if group_by_method else literal('')).label('method'),
             func.count().label('activity_count'),
             func.count(func.distinct(col(AppActivity.user))).label('unique_users'),
         )
