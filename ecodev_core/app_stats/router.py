@@ -42,11 +42,11 @@ def get_stats_router(
                 from_date: datetime | None = Query(default=None),
                 to_date: datetime | None = Query(default=None),
                 session: Session = Depends(get_session),
-        ) -> PagedResponse[ProjectExport]:
+        ) -> list[ProjectExport]:
             return _projects_endpoint(adapter, from_date, to_date, session)
 
         router.add_api_route('/projects', _projects_closure,
-                             response_model=PagedResponse[ProjectExport], methods=['GET'])
+                             response_model=list[ProjectExport], methods=['GET'])
     return router
 
 
@@ -78,20 +78,8 @@ def _projects_endpoint(
         from_date: datetime | None,
         to_date: datetime | None,
         session: Session,
-) -> PagedResponse[ProjectExport]:
+) -> list[ProjectExport]:
     """
-    Returns the first page of project snapshots using the supplied adapter.
+    Returns all project snapshots from the supplied adapter in a single response.
     """
-    items = list(adapter.list_projects(session, from_date, to_date))
-    if not items:
-        return PagedResponse(items=[], next_from_date=None)
-
-    paged = [items[i:i + adapter.page_size]
-             for i in range(0, len(items), adapter.page_size)]
-    page_items = paged[0]
-    next_from_date = (
-        page_items[-1].created_at
-        if len(paged) > 1 and page_items
-        else None
-    )
-    return PagedResponse(items=page_items, next_from_date=next_from_date)
+    return list(adapter.list_projects(session, from_date, to_date))

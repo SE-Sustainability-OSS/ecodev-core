@@ -3,7 +3,7 @@ Opt-in consumer submodule. Not imported by ecodev_core.app_stats or ecodev_core.
 so these tables are never created in producer-only databases.
 
 Import explicitly in consumer apps:
-    from ecodev_core.app_stats.consumer import StatsApiClient, RemoteHourlyActivity, ...
+    from ecodev_core.app_stats.consumer import StatsApiClient, RemoteActivity, ...
 """
 from ecodev_core.app_stats.consumer.client import StatsApiClient
 from ecodev_core.app_stats.consumer.ingest import delete_lookback_activities

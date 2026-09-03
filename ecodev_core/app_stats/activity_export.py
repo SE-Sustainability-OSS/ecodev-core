@@ -80,7 +80,6 @@ def get_activities(
     last_emitted_period = page_rows[-1].period_start
 
     if overflow_period == last_emitted_period:
-        # Degenerate: a single bucket holds more than page_size rows; advance past it.
         next_from_date = last_emitted_period + _one_period(granularity)
     else:
         page_rows = [r for r in page_rows if r.period_start < overflow_period]
@@ -93,7 +92,9 @@ def get_activities(
 
 
 def _to_export(r, granularity: str) -> ActivityExport:
-    """Converts one ORM row to an ActivityExport instance."""
+    """
+    Converts one ORM row to an ActivityExport instance.
+    """
     return ActivityExport(
         application=r.application,
         period_start=r.period_start,
@@ -105,7 +106,9 @@ def _to_export(r, granularity: str) -> ActivityExport:
 
 
 def _one_period(granularity: str) -> timedelta:
-    """Returns the forward-advance step for the degenerate cursor case."""
+    """
+    Returns the forward-advance step for the degenerate cursor case.
+    """
     if granularity == 'month':
         return timedelta(days=32)
     return timedelta(hours=1)

@@ -1,8 +1,10 @@
 """
 HTTP client for polling a remote app's /stats endpoints.
-Follows `next_from_date` cursors until the page is exhausted.
+Activities follow `next_from_date` cursors; projects are fetched in a single request.
 """
 from datetime import datetime
+from http import HTTPStatus
+from typing import Any
 from typing import Generator
 from urllib.parse import quote
 
@@ -24,6 +26,10 @@ from ecodev_core.app_stats.contract import PagedResponse
 from ecodev_core.app_stats.contract import ProjectExport
 from ecodev_core.rest_api_client import RestApiClient
 
+# /stats/projects is registered only when a producer supplies a ProjectStatsAdapter,
+# so a 404 there is a valid opt-out rather than a failure.
+ABSENT_ENDPOINT = (HTTPStatus.NOT_FOUND,)
+
 
 class StatsApiClient(RestApiClient):
     """
@@ -35,6 +41,36 @@ class StatsApiClient(RestApiClient):
     """
     model_config = ConfigDict(frozen=True)
     api_key: str
+
+    def fetch_activities(
+            self,
+            from_date: datetime | None = None,
+            to_date: datetime | None = None,
+            granularity: str = HOUR_GRAIN,
+    ) -> Generator[ActivityExport, None, None]:
+        """
+        Yields all ActivityExport rows for the given granularity, following pagination.
+        Tolerates no error status: /stats/activities is always registered, so any failure
+        means the producer is unreachable and must not be mistaken for "no activity".
+        """
+        yield from _follow_pages(self, ACTIVITIES_PATH, from_date, to_date,
+                                 granularity, ActivityExport, tolerate=())
+
+    def fetch_projects(
+            self,
+            from_date: datetime | None = None,
+            to_date: datetime | None = None,
+    ) -> list[ProjectExport] | None:
+        """
+        Returns all ProjectExport rows in a single request, or None when the producer does
+        not expose /stats/projects.  None is deliberately distinct from an empty list so
+        callers can leave stored rows untouched instead of replacing them with nothing.
+        """
+        url = _build_url(self.base_url, PROJECTS_PATH, from_date, to_date)
+        raw = _get_json(self, url, tolerate=ABSENT_ENDPOINT)
+        if raw is None:
+            return None
+        return [ProjectExport.model_validate(item) for item in raw]
 
     @field_validator('base_url')
     @classmethod
@@ -55,30 +91,6 @@ class StatsApiClient(RestApiClient):
 
     def _get_header(self) -> dict:
         return {API_KEY_HEADER: self.api_key, ACCEPT_HEADER: JSON_MIME}
-
-    def fetch_activities(
-            self,
-            from_date: datetime | None = None,
-            to_date: datetime | None = None,
-            granularity: str = HOUR_GRAIN,
-    ) -> Generator[ActivityExport, None, None]:
-        """
-        Yields all ActivityExport rows for the given granularity, following pagination.
-        """
-        yield from _follow_pages(self, ACTIVITIES_PATH, from_date, to_date,
-                                  granularity, ActivityExport, tolerate_missing=False)
-
-    def fetch_projects(
-            self,
-            from_date: datetime | None = None,
-            to_date: datetime | None = None,
-    ) -> Generator[ProjectExport, None, None]:
-        """
-        Yields all ProjectExport rows, following pagination until exhausted.
-        Returns an empty generator if the remote app has no /stats/projects route (404).
-        """
-        yield from _follow_pages(self, PROJECTS_PATH, from_date, to_date,
-                                  HOUR_GRAIN, ProjectExport, tolerate_missing=True)
 
 
 def _build_url(
@@ -102,6 +114,23 @@ def _build_url(
     return url
 
 
+def _get_json(
+        client: StatsApiClient,
+        url: str,
+        tolerate: tuple[HTTPStatus, ...],
+) -> Any | None:
+    """
+    Returns the parsed response body, or None when the status is one of `tolerate`.
+    Single door for both endpoints so their error policy is visible at each call site.
+    """
+    try:
+        return client.get(url)
+    except requests.HTTPError as exc:
+        if exc.response is not None and exc.response.status_code in tolerate:
+            return None
+        raise
+
+
 def _follow_pages(
         client: StatsApiClient,
         path: str,
@@ -109,20 +138,17 @@ def _follow_pages(
         to_date: datetime | None,
         granularity: str,
         model_class: type,
-        tolerate_missing: bool,
+        tolerate: tuple[HTTPStatus, ...],
 ) -> Generator:
     """
     Yields parsed model instances following `next_from_date` cursor until None.
-    When `tolerate_missing` is True, a 404 response silently returns an empty generator.
+    Stops silently if a response status is one of `tolerate`.
     """
     while True:
         url = _build_url(client.base_url, path, from_date, to_date, granularity)
-        try:
-            raw = client.get(url)
-        except requests.HTTPError as exc:
-            if tolerate_missing and exc.response is not None and exc.response.status_code == 404:
-                return
-            raise
+        raw = _get_json(client, url, tolerate)
+        if raw is None:
+            return
         page = PagedResponse[model_class].model_validate(raw)
         yield from page.items
         if page.next_from_date is None:

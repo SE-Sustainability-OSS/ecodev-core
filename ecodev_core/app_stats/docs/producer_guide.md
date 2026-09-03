@@ -71,9 +71,9 @@ def _list_projects(
 ) -> Iterable[ProjectExport]:
     stmt = select(Project)
     if from_date:
-        stmt = stmt.where(col(Project.created_at) >= from_date)
+        stmt = stmt.where(col(Project.modified_at) >= from_date)
     if to_date:
-        stmt = stmt.where(col(Project.created_at) < to_date)
+        stmt = stmt.where(col(Project.modified_at) < to_date)
 
     for project in session.exec(stmt).all():
         yield ProjectExport(
@@ -93,6 +93,10 @@ stats_router = get_stats_router(
 )
 ```
 
+> **Filter on `modified_at`, not `created_at`.**  The consumer sends the last-ingest
+> timestamp as `from_date`; filtering on `modified_at` ensures projects updated since the
+> last ingest are included, not just projects created since then.
+
 ```python
 # app/app.py
 from app.routers.app_stats import stats_router
@@ -101,7 +105,52 @@ app.include_router(stats_router)
 
 ---
 
-## 4. Custom dependency
+## 4. Endpoint shapes and query surface
+
+### `/stats/activities` → `PagedResponse[ActivityExport]`
+
+Rows are aggregated server-side by `(application, period_start, method)` with `count(*)`
+as `activity_count` and `count(distinct user)` as `unique_users`.  No raw user identity
+crosses the wire.
+
+| Query parameter | Type | Default | Description |
+|---|---|---|---|
+| `from_date` | ISO-8601 datetime | — | Inclusive bucket start filter |
+| `to_date` | ISO-8601 datetime | — | Exclusive bucket end filter |
+| `method` | string | — | Filter to a single method name |
+| `page_size` | int (1–5000) | 500 | Max rows per page |
+| `granularity` | `hour` or `month` | `hour` | Bucket size for `date_trunc` |
+
+The response envelope is:
+
+```json
+{
+  "items": [...],
+  "next_from_date": "2026-01-15T09:00:00" | null
+}
+```
+
+Pass `next_from_date` back as `from_date` to fetch the next page.  When `next_from_date`
+is `null` the final page has been reached.  `next_from_date` is a keyset cursor on the
+bucket timestamp, so pages remain stable while new activity arrives.
+
+### `/stats/projects` → `list[ProjectExport]`
+
+Returns a bare JSON array (no pagination envelope).  All projects matching the date filters
+are returned in a single response.
+
+When no adapter is supplied the route is not registered at all and returns **404**.  This is
+a valid opt-out, not an error: the consumer client treats it as "this producer has no
+projects" and leaves any previously stored rows untouched.
+
+| Query parameter | Type | Default | Description |
+|---|---|---|---|
+| `from_date` | ISO-8601 datetime | — | Filter by `modified_at >= from_date` |
+| `to_date` | ISO-8601 datetime | — | Filter by `modified_at < to_date` |
+
+---
+
+## 5. Custom dependency
 
 `get_stats_router` accepts a `dependency` kwarg if you need to swap the auth check:
 
@@ -113,7 +162,7 @@ The default is `api_key_auth` from `ecodev_core.app_stats.api_key`.
 
 ---
 
-## 5. Remove the legacy `/get-activities` endpoint
+## 6. Remove the legacy `/get-activities` endpoint
 
 The new `/stats/activities` supersedes it.  Delete or comment out any existing
 `@app.get('/get-activities')` decorator in `app/app.py`.

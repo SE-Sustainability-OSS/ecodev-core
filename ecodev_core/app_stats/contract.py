@@ -63,4 +63,3 @@ class ProjectStatsAdapter(CustomFrozen):
     Mirrors the Insertor idiom: a model of callables so each app can wire its own ORM layer.
     """
     list_projects: Callable[[Session, datetime | None, datetime | None], Iterable[ProjectExport]]
-    page_size: int = 500

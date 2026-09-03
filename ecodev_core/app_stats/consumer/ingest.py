@@ -1,10 +1,10 @@
 """
 Insertors and deletors for remotely ingested stats data.
-The lookback-delete-then-upsert pattern prevents stale rows from accumulating
-when a producer back-fills or corrects historical data.
 
-`granularity` must be the same value used in the fetch call so the delete scope
-matches the ingest scope exactly (idempotent re-runs).
+The ingest pattern is: delete, then upsert.  Both the delete and the upsert must
+receive the same `from_date` and `granularity` that were passed to `fetch_activities`,
+so the delete scope matches the fetch scope exactly and repeated runs replace identical
+rows rather than duplicating them (idempotent).
 """
 from datetime import datetime
 
@@ -25,8 +25,11 @@ def delete_lookback_activities(
         granularity: str = 'hour',
 ) -> None:
     """
-    Deletes all `RemoteActivity` rows for `application` and `granularity` at or after `from_date`.
-    Call before upserting the new batch to avoid stale rows from prior ingest runs.
+    Deletes RemoteActivity rows where application == `application`
+    AND granularity == `granularity` AND period_start >= `from_date`.
+
+    Pass the same `from_date` and `granularity` used in the fetch call so the delete scope
+    matches the ingest scope exactly, making repeated runs idempotent.
     """
     session.exec(
         delete(RemoteActivity)
@@ -42,8 +45,8 @@ def delete_lookback_projects(
         application: str,
 ) -> None:
     """
-    Deletes all remote project rows for `application`.
-    Projects are small enough to replace wholesale each ingest cycle.
+    Deletes all RemoteAppProject rows for `application` (full replacement each cycle).
+    Projects are not date-partitioned, so the whole set is replaced on every ingest run.
     """
     session.exec(
         delete(RemoteAppProject)
