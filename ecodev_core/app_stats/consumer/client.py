@@ -14,6 +14,8 @@ from ecodev_core.app_stats.constants import ACCEPT_HEADER
 from ecodev_core.app_stats.constants import ACTIVITIES_PATH
 from ecodev_core.app_stats.constants import API_KEY_HEADER
 from ecodev_core.app_stats.constants import FROM_DATE
+from ecodev_core.app_stats.constants import GRANULARITY
+from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.app_stats.constants import JSON_MIME
 from ecodev_core.app_stats.constants import PROJECTS_PATH
 from ecodev_core.app_stats.constants import TO_DATE
@@ -58,12 +60,13 @@ class StatsApiClient(RestApiClient):
             self,
             from_date: datetime | None = None,
             to_date: datetime | None = None,
+            granularity: str = HOUR_GRAIN,
     ) -> Generator[ActivityExport, None, None]:
         """
-        Yields all ActivityExport rows, following pagination until exhausted.
+        Yields all ActivityExport rows for the given granularity, following pagination.
         """
-        yield from _follow_pages(self, ACTIVITIES_PATH, from_date, to_date, ActivityExport,
-                                  tolerate_missing=False)
+        yield from _follow_pages(self, ACTIVITIES_PATH, from_date, to_date,
+                                  granularity, ActivityExport, tolerate_missing=False)
 
     def fetch_projects(
             self,
@@ -74,8 +77,8 @@ class StatsApiClient(RestApiClient):
         Yields all ProjectExport rows, following pagination until exhausted.
         Returns an empty generator if the remote app has no /stats/projects route (404).
         """
-        yield from _follow_pages(self, PROJECTS_PATH, from_date, to_date, ProjectExport,
-                                  tolerate_missing=True)
+        yield from _follow_pages(self, PROJECTS_PATH, from_date, to_date,
+                                  HOUR_GRAIN, ProjectExport, tolerate_missing=True)
 
 
 def _build_url(
@@ -83,14 +86,17 @@ def _build_url(
         path: str,
         from_date: datetime | None = None,
         to_date: datetime | None = None,
+        granularity: str = HOUR_GRAIN,
 ) -> str:
-    """Builds the request URL with optional date query args embedded directly."""
+    """Builds the request URL with optional query args embedded directly."""
     url = f'{base_url}{path}'
     parts = []
     if from_date:
         parts.append(f'{FROM_DATE}={quote(from_date.isoformat())}')
     if to_date:
         parts.append(f'{TO_DATE}={quote(to_date.isoformat())}')
+    if granularity != HOUR_GRAIN:
+        parts.append(f'{GRANULARITY}={quote(granularity)}')
     if parts:
         url = f'{url}?{"&".join(parts)}'
     return url
@@ -101,6 +107,7 @@ def _follow_pages(
         path: str,
         from_date: datetime | None,
         to_date: datetime | None,
+        granularity: str,
         model_class: type,
         tolerate_missing: bool,
 ) -> Generator:
@@ -109,7 +116,7 @@ def _follow_pages(
     When `tolerate_missing` is True, a 404 response silently returns an empty generator.
     """
     while True:
-        url = _build_url(client.base_url, path, from_date, to_date)
+        url = _build_url(client.base_url, path, from_date, to_date, granularity)
         try:
             raw = client.get(url)
         except requests.HTTPError as exc:

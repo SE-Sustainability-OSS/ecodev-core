@@ -10,21 +10,24 @@ from sqlmodel import Field
 from sqlmodel import SQLModel
 
 
-class RemoteHourlyActivity(SQLModel, table=True):  # type: ignore
+class RemoteActivity(SQLModel, table=True):  # type: ignore
     """
-    One hourly bucket of activity ingested from a remote producer app.
+    One time-bucketed row of activity ingested from a remote producer app.
 
-    Unique on (application, hour, user_email, method) — the full grain of ActivityExport.
+    Keyed on (application, granularity, period_start, method).
+    `granularity` is 'hour' or 'month', matching the ActivityExport wire format.
+    `unique_users` is pre-aggregated server-side — no user identity is stored here.
     `ingested_at` records when the row was last written, for debugging.
     """
-    __tablename__ = 'remote_hourly_activity'
+    __tablename__ = 'remote_activity'
 
     id: Optional[int] = Field(default=None, primary_key=True)
     application: str = Field(index=True)
-    hour: datetime = Field(index=True)
-    user_email: str = Field(index=True)
+    granularity: str = Field(index=True)
+    period_start: datetime = Field(index=True)
     method: str = Field(default='', index=True)
     activity_count: int
+    unique_users: int
     ingested_at: datetime = Field(default_factory=datetime.utcnow)
 
 

@@ -12,12 +12,12 @@ from ecodev_core.app_stats.consumer.ingest import upsert_remote_activities
 from ecodev_core.app_stats.consumer.ingest import upsert_remote_projects
 from ecodev_core.app_stats.consumer.processing import get_remote_activities
 from ecodev_core.app_stats.consumer.processing import get_remote_projects
+from ecodev_core.app_stats.consumer.tables import RemoteActivity
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
-from ecodev_core.app_stats.consumer.tables import RemoteHourlyActivity
 
 __all__ = [
     'StatsApiClient',
-    'RemoteHourlyActivity',
+    'RemoteActivity',
     'RemoteAppProject',
     'delete_lookback_activities',
     'delete_lookback_projects',

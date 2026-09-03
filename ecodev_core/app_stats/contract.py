@@ -19,14 +19,17 @@ T = TypeVar('T')
 
 class ActivityExport(Frozen):
     """
-    One hour-bucketed row of app activity, aggregated by (application, hour, user, method).
-    `hour` is always UTC-aligned to the start of the hour.
+    One aggregated row of app activity for a time bucket.
+    `period_start` is the bucket start (UTC), aligned to `granularity` (hour or month).
+    `unique_users` is the count of distinct users in that bucket — pre-computed server-side
+    so individual user identity never crosses the wire.
     """
     application: str
-    hour: datetime
-    user_email: str
+    period_start: datetime
+    granularity: str = 'hour'
     method: str = ''
     activity_count: int
+    unique_users: int
 
 
 class ProjectExport(Frozen):

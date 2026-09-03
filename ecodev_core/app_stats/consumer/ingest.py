@@ -2,6 +2,9 @@
 Insertors and deletors for remotely ingested stats data.
 The lookback-delete-then-upsert pattern prevents stale rows from accumulating
 when a producer back-fills or corrects historical data.
+
+`granularity` must be the same value used in the fetch call so the delete scope
+matches the ingest scope exactly (idempotent re-runs).
 """
 from datetime import datetime
 
@@ -9,8 +12,8 @@ from sqlmodel import col
 from sqlmodel import delete
 from sqlmodel import Session
 
+from ecodev_core.app_stats.consumer.tables import RemoteActivity
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
-from ecodev_core.app_stats.consumer.tables import RemoteHourlyActivity
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import ProjectExport
 
@@ -19,15 +22,17 @@ def delete_lookback_activities(
         session: Session,
         application: str,
         from_date: datetime,
+        granularity: str = 'hour',
 ) -> None:
     """
-    Deletes all remote activity rows for `application` on or after `from_date`.
-    Call before upserting the new page to avoid stale per-method duplicates.
+    Deletes all `RemoteActivity` rows for `application` and `granularity` at or after `from_date`.
+    Call before upserting the new batch to avoid stale rows from prior ingest runs.
     """
     session.exec(
-        delete(RemoteHourlyActivity)
-        .where(col(RemoteHourlyActivity.application) == application)
-        .where(col(RemoteHourlyActivity.hour) >= from_date)
+        delete(RemoteActivity)
+        .where(col(RemoteActivity.application) == application)
+        .where(col(RemoteActivity.granularity) == granularity)
+        .where(col(RemoteActivity.period_start) >= from_date)
     )
     session.commit()
 
@@ -51,18 +56,20 @@ def upsert_remote_activities(
         session: Session,
         application: str,
         activities: list[ActivityExport],
+        granularity: str = 'hour',
 ) -> None:
     """
     Inserts remote activity rows.  Call after `delete_lookback_activities` to avoid duplicates.
     """
     ingested_at = datetime.utcnow()
     session.add_all([
-        RemoteHourlyActivity(
+        RemoteActivity(
             application=application,
-            hour=item.hour,
-            user_email=item.user_email,
+            granularity=granularity,
+            period_start=item.period_start,
             method=item.method,
             activity_count=item.activity_count,
+            unique_users=item.unique_users,
             ingested_at=ingested_at,
         )
         for item in activities

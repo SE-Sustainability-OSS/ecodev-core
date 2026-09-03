@@ -55,11 +55,13 @@ def _activities_endpoint(
         to_date: datetime | None = Query(default=None),
         method: str | None = Query(default=None),
         page_size: int = Query(default=500, ge=1, le=5000),
+        granularity: str = Query(default='hour', pattern='^(hour|month)$'),
         session: Session = Depends(get_session),
 ) -> PagedResponse[ActivityExport]:
     """
-    Returns a page of hourly activity buckets, ordered ascending by hour.
+    Returns a page of time-bucketed activity rows, ordered ascending by period_start.
     Pass `next_from_date` from the previous response as `from_date` to advance the cursor.
+    Use `granularity=month` for monthly-grain data with pre-aggregated `unique_users`.
     """
     return get_activities(
         session=session,
@@ -67,6 +69,7 @@ def _activities_endpoint(
         to_date=to_date,
         method=method,
         page_size=page_size,
+        granularity=granularity,
     )
 
 
