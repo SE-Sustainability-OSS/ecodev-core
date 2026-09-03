@@ -41,7 +41,6 @@ from ecodev_core.app_stats.consumer.tables import RemoteAppProject
 USERS_DIR = Path('/app/tests/unitary/data')
 TEST_API_KEY = 'test-api-key-abc123'
 
-# Two alice/upload_file rows in the same hour → must aggregate to 1 row with activity_count=2.
 SEED_ACTIVITIES = [
     {'user': 'alice', 'application': 'cf_tool', 'method': 'upload_file',
      'created_at': datetime(2026, 1, 15, 8, 10)},
@@ -435,6 +434,9 @@ class AppStatsMonthGrainTest(SafeTestCase):
         return {'X-API-Key': TEST_API_KEY}
 
     def test_month_grain_buckets_to_first_of_month(self):
+        """
+        date_trunc('month', ...) must align every period_start to the 1st of the month.
+        """
         resp = self.client.get('/stats/activities', headers=self._auth(),
                                params={'granularity': MONTH_GRAIN})
         self.assertEqual(resp.status_code, 200)
@@ -444,6 +446,9 @@ class AppStatsMonthGrainTest(SafeTestCase):
                             f'Unexpected period: {period}')
 
     def test_month_grain_stamps_granularity(self):
+        """
+        Each returned row must carry granularity='month' when that grain is requested.
+        """
         resp = self.client.get('/stats/activities', headers=self._auth(),
                                params={'granularity': MONTH_GRAIN})
         self.assertEqual(resp.status_code, 200)
@@ -470,7 +475,9 @@ class AppStatsMonthGrainTest(SafeTestCase):
         self.assertEqual(jan_rows[0]['unique_users'], 2)
 
     def test_group_by_method_false_collapses_method_only(self):
-        """With group_by_method=false the method column is '' but application is preserved."""
+        """
+        With group_by_method=false the method column is '' but application is preserved.
+        """
         resp = self.client.get('/stats/activities', headers=self._auth(), params={
             'granularity': HOUR_GRAIN,
             'group_by_method': 'false',
@@ -481,16 +488,25 @@ class AppStatsMonthGrainTest(SafeTestCase):
             self.assertNotEqual(item['application'], '')
 
     def test_invalid_granularity_returns_422(self):
+        """
+        granularity values outside the allowed pattern must be rejected with 422.
+        """
         resp = self.client.get('/stats/activities', headers=self._auth(),
                                params={'granularity': 'week'})
         self.assertEqual(resp.status_code, 422)
 
     def test_page_size_zero_returns_422(self):
+        """
+        page_size=0 violates the ge=1 constraint and must return 422.
+        """
         resp = self.client.get('/stats/activities', headers=self._auth(),
                                params={'page_size': 0})
         self.assertEqual(resp.status_code, 422)
 
     def test_page_size_too_large_returns_422(self):
+        """
+        page_size above the le=5000 limit must return 422.
+        """
         resp = self.client.get('/stats/activities', headers=self._auth(),
                                params={'page_size': 10000})
         self.assertEqual(resp.status_code, 422)
@@ -534,7 +550,9 @@ class AppStatsMonthGrainTest(SafeTestCase):
         self.assertIn('2026-02', seen_months)
 
     def test_custom_prefix_registered(self):
-        """get_stats_router(prefix='/custom') must mount under /custom/activities."""
+        """
+        get_stats_router(prefix='/custom') must mount under /custom/activities.
+        """
         app = FastAPI()
         app.include_router(get_stats_router(prefix='/custom', adapter=None,
                                             dependency=lambda: None))
@@ -542,7 +560,9 @@ class AppStatsMonthGrainTest(SafeTestCase):
         self.assertEqual(c.get('/custom/activities').status_code, 200)
 
     def test_custom_dependency_called(self):
-        """A custom dependency function replacing api_key_auth must be invoked."""
+        """
+        A custom dependency function replacing api_key_auth must be invoked.
+        """
         called = []
 
         def _record() -> None:
@@ -555,7 +575,9 @@ class AppStatsMonthGrainTest(SafeTestCase):
 
 
 class AppStatsApiKeyTest(SafeTestCase):
-    """Tests for the _configured_api_key and open-access path in api_key_auth."""
+    """
+    Tests for the _configured_api_key and open-access path in api_key_auth.
+    """
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -565,7 +587,9 @@ class AppStatsApiKeyTest(SafeTestCase):
         cls.app = _build_app(with_projects=False)
 
     def test_no_key_configured_allows_unauthenticated_request(self):
-        """When _configured_api_key returns None, any request succeeds without a header."""
+        """
+        When _configured_api_key returns None, any request succeeds without a header.
+        """
         with patch('ecodev_core.app_stats.api_key._configured_api_key', return_value=None):
             resp = TestClient(self.app).get('/stats/activities')
         self.assertEqual(resp.status_code, 200)
@@ -581,7 +605,9 @@ class AppStatsApiKeyTest(SafeTestCase):
         self.assertEqual(resp.status_code, 200)
 
     def test_configured_key_rejects_missing_header(self):
-        """When a key is configured and the header is absent, 401 + MISSING_AUTH_MSG."""
+        """
+        When a key is configured and the header is absent, 401 + MISSING_AUTH_MSG.
+        """
         with patch('ecodev_core.app_stats.api_key._configured_api_key', return_value='k'):
             resp = TestClient(self.app).get('/stats/activities')
         self.assertEqual(resp.status_code, 401)
@@ -621,7 +647,9 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         delete_table(RemoteAppProject)
 
     def _seed(self, session: Session) -> None:
-        """Inserts two hour-grain rows (Jan, Feb) and one month-grain row (Jan)."""
+        """
+        Inserts two hour-grain rows (Jan, Feb) and one month-grain row (Jan).
+        """
         upsert_remote_activities(session, 'cf_tool', [
             ActivityExport(application='cf_tool', period_start=datetime(2026, 1, 1, 8, 0),
                            granularity=HOUR_GRAIN, method='m', activity_count=1, unique_users=1),
@@ -634,7 +662,9 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         ], granularity=MONTH_GRAIN)
 
     def test_delete_lookback_leaves_month_rows_intact(self):
-        """Deleting hour-grain rows must not touch month-grain rows."""
+        """
+        Deleting hour-grain rows must not touch month-grain rows.
+        """
         with Session(engine) as session:
             self._seed(session)
             delete_lookback_activities(session, 'cf_tool', datetime(2026, 1, 1),
@@ -648,7 +678,9 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         self.assertEqual(len(month_rows), 1)
 
     def test_delete_lookback_preserves_pre_from_date_rows(self):
-        """Rows before from_date must survive the delete."""
+        """
+        Rows before from_date must survive the delete.
+        """
         with Session(engine) as session:
             self._seed(session)
             delete_lookback_activities(session, 'cf_tool', datetime(2026, 2, 1),
@@ -659,6 +691,9 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         self.assertEqual(rows[0]['period_start'], datetime(2026, 1, 1, 8, 0))
 
     def test_get_remote_activities_from_date_filter(self):
+        """
+        from_date filter must exclude rows with period_start before that date.
+        """
         with Session(engine) as session:
             self._seed(session)
             rows = get_remote_activities(session, application='cf_tool',
@@ -669,6 +704,9 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         self.assertEqual(rows[0]['period_start'], datetime(2026, 2, 1, 9, 0))
 
     def test_get_remote_activities_to_date_filter(self):
+        """
+        to_date filter must exclude rows with period_start on or after that date.
+        """
         with Session(engine) as session:
             self._seed(session)
             rows = get_remote_activities(session, application='cf_tool',
@@ -679,7 +717,9 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         self.assertEqual(rows[0]['period_start'], datetime(2026, 1, 1, 8, 0))
 
     def test_get_remote_activities_excludes_other_granularities(self):
-        """Default granularity=hour must not return month-grain rows."""
+        """
+        Default granularity=hour must not return month-grain rows.
+        """
         with Session(engine) as session:
             self._seed(session)
             rows = get_remote_activities(session, application='cf_tool')
@@ -687,7 +727,9 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         self.assertTrue(all(r['granularity'] == HOUR_GRAIN for r in rows))
 
     def test_get_remote_projects_no_application_returns_all(self):
-        """get_remote_projects with application=None must return rows for every application."""
+        """
+        get_remote_projects with application=None must return rows for every application.
+        """
         projects = [
             ProjectExport(project_id='p1', creator='a', project_type='pcf_only'),
             ProjectExport(project_id='p2', creator='b', project_type='cft_only'),

@@ -287,35 +287,67 @@ class UpsertorTest(SafeTestCase):
 
 
 class PyTypeToSqlTest(SafeTestCase):
-    """Unit tests for _py_type_to_sql, including the datetime -> TIMESTAMP addition."""
+    """
+    Unit tests for _py_type_to_sql, including the datetime -> TIMESTAMP addition.
+    """
 
     def _check(self, py_type, expected_sql: str) -> None:
+        """
+        Asserts that _py_type_to_sql maps py_type to expected_sql.
+        """
         self.assertEqual(_py_type_to_sql(py_type), expected_sql)
 
     def test_datetime_maps_to_timestamp(self):
+        """
+        datetime must map to TIMESTAMP (new in this PR).
+        """
         self._check(datetime, 'TIMESTAMP')
 
     def test_int_maps_to_integer(self):
+        """
+        int must map to INTEGER.
+        """
         self._check(int, 'INTEGER')
 
     def test_float_maps_to_float(self):
+        """
+        float must map to FLOAT.
+        """
         self._check(float, 'FLOAT')
 
     def test_str_maps_to_varchar(self):
+        """
+        str must map to VARCHAR.
+        """
         self._check(str, 'VARCHAR')
 
     def test_bool_maps_to_boolean(self):
+        """
+        bool must map to BOOLEAN.
+        """
         self._check(bool, 'BOOLEAN')
 
     def test_bytes_maps_to_bytea(self):
+        """
+        bytes must map to BYTEA.
+        """
         self._check(bytes, 'BYTEA')
 
     def test_dict_maps_to_jsonb(self):
+        """
+        dict must map to JSONB.
+        """
         self._check(dict, 'JSONB')
 
     def test_enum_maps_to_lowercase_name(self):
+        """
+        An Enum type must map to its lowercase class name (the Postgres type name).
+        """
         self._check(Permission, 'permission')
 
     def test_unsupported_type_raises_value_error(self):
+        """
+        An unsupported type must raise ValueError.
+        """
         with self.assertRaises(ValueError):
             _py_type_to_sql(list)

@@ -274,17 +274,25 @@ class AuthenticationTest(SafeTestCase):
         self.assertEqual(wrong_user, INVALID_CREDENTIALS)
 
     def test_select_user_by_id_returns_none_for_none(self):
-        """Passing id=None must return None without hitting the DB."""
+        """
+        Passing id=None must return None without hitting the DB.
+        """
         with Session(engine) as session:
             result = select_user_by_id(None, session)
         self.assertIsNone(result)
 
     def test_select_user_by_id_returns_none_for_unknown_id(self):
+        """
+        An id that does not exist in the DB must return None.
+        """
         with Session(engine) as session:
             result = select_user_by_id(999999, session)
         self.assertIsNone(result)
 
     def test_select_user_by_id_returns_matching_user(self):
+        """
+        A valid id must return the corresponding AppUser.
+        """
         with Session(engine) as session:
             user = select_user('client', session)
             result = select_user_by_id(user.id, session)

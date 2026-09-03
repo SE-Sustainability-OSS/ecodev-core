@@ -205,7 +205,9 @@ class RestApiClientRequestTest(SafeTestCase):
             handle_response(response)
 
     def test_handle_response_logs_error_when_status_not_expected(self):
-        """log.error must be called for statuses not in expected_statuses."""
+        """
+        log.error must be called for statuses not in expected_statuses.
+        """
         response = MagicMock(status_code=500, text='error')
         response.raise_for_status.side_effect = requests.HTTPError('server error')
 
@@ -215,7 +217,9 @@ class RestApiClientRequestTest(SafeTestCase):
             mock_log.error.assert_called_once()
 
     def test_handle_response_suppresses_log_for_expected_status(self):
-        """log.error must NOT be called when the status is in expected_statuses."""
+        """
+        log.error must NOT be called when the status is in expected_statuses.
+        """
         response = MagicMock(status_code=404, text='not found')
         response.raise_for_status.side_effect = requests.HTTPError('not found')
 
@@ -225,11 +229,16 @@ class RestApiClientRequestTest(SafeTestCase):
             mock_log.error.assert_not_called()
 
     def test_base_url_defaults_to_empty_string(self):
+        """
+        RestApiClient.base_url must default to an empty string.
+        """
         client = RestApiClient()
         self.assertEqual(client.base_url, '')
 
     def test_get_forwards_expected_statuses(self):
-        """RestApiClient.get must pass expected_statuses through to handle_response."""
+        """
+        RestApiClient.get must pass expected_statuses through to handle_response.
+        """
         client = RestApiClient()
         response = MagicMock(status_code=404, text='not found')
         response.raise_for_status.side_effect = requests.HTTPError('not found')
