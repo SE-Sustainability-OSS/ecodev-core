@@ -12,6 +12,7 @@ from sqlmodel import col
 from sqlmodel import delete
 from sqlmodel import Session
 
+from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.app_stats.consumer.tables import RemoteActivity
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
 from ecodev_core.app_stats.contract import ActivityExport
@@ -22,7 +23,7 @@ def delete_lookback_activities(
         session: Session,
         application: str,
         from_date: datetime,
-        granularity: str = 'hour',
+        granularity: str = HOUR_GRAIN,
 ) -> None:
     """
     Deletes RemoteActivity rows where application == `application`
@@ -59,7 +60,7 @@ def upsert_remote_activities(
         session: Session,
         application: str,
         activities: list[ActivityExport],
-        granularity: str = 'hour',
+        granularity: str = HOUR_GRAIN,
 ) -> None:
     """
     Inserts remote activity rows.  Call after `delete_lookback_activities` to avoid duplicates.

@@ -28,6 +28,7 @@ from ecodev_core import upsert_data
 from ecodev_core import upsert_deletor
 from ecodev_core import upsert_df_data
 from ecodev_core import Version
+from ecodev_core.db_upsertion import _py_type_to_sql
 from ecodev_core.db_upsertion import add_missing_columns
 from ecodev_core.db_upsertion import add_missing_enum_values
 from ecodev_core.db_upsertion import filter_to_sfield_dict
@@ -283,3 +284,38 @@ class UpsertorTest(SafeTestCase):
             'bar1': 'bar',
             'bar2': True
         })
+
+
+class PyTypeToSqlTest(SafeTestCase):
+    """Unit tests for _py_type_to_sql, including the datetime -> TIMESTAMP addition."""
+
+    def _check(self, py_type, expected_sql: str) -> None:
+        self.assertEqual(_py_type_to_sql(py_type), expected_sql)
+
+    def test_datetime_maps_to_timestamp(self):
+        self._check(datetime, 'TIMESTAMP')
+
+    def test_int_maps_to_integer(self):
+        self._check(int, 'INTEGER')
+
+    def test_float_maps_to_float(self):
+        self._check(float, 'FLOAT')
+
+    def test_str_maps_to_varchar(self):
+        self._check(str, 'VARCHAR')
+
+    def test_bool_maps_to_boolean(self):
+        self._check(bool, 'BOOLEAN')
+
+    def test_bytes_maps_to_bytea(self):
+        self._check(bytes, 'BYTEA')
+
+    def test_dict_maps_to_jsonb(self):
+        self._check(dict, 'JSONB')
+
+    def test_enum_maps_to_lowercase_name(self):
+        self._check(Permission, 'permission')
+
+    def test_unsupported_type_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            _py_type_to_sql(list)

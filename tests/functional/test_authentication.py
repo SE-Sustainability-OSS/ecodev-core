@@ -22,6 +22,7 @@ from ecodev_core import get_recent_activities
 from ecodev_core import is_monitoring_user
 from ecodev_core import SafeTestCase
 from ecodev_core import select_user
+from ecodev_core import select_user_by_id
 from ecodev_core import upsert_app_users
 from ecodev_core.app_activity import get_monthly_activities
 from ecodev_core.authentication import _create_access_token
@@ -271,3 +272,21 @@ class AuthenticationTest(SafeTestCase):
         except HTTPException as e:
             wrong_user = e.detail
         self.assertEqual(wrong_user, INVALID_CREDENTIALS)
+
+    def test_select_user_by_id_returns_none_for_none(self):
+        """Passing id=None must return None without hitting the DB."""
+        with Session(engine) as session:
+            result = select_user_by_id(None, session)
+        self.assertIsNone(result)
+
+    def test_select_user_by_id_returns_none_for_unknown_id(self):
+        with Session(engine) as session:
+            result = select_user_by_id(999999, session)
+        self.assertIsNone(result)
+
+    def test_select_user_by_id_returns_matching_user(self):
+        with Session(engine) as session:
+            user = select_user('client', session)
+            result = select_user_by_id(user.id, session)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.user, 'client')

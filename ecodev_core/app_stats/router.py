@@ -14,6 +14,8 @@ from sqlmodel import Session
 from ecodev_core.app_stats.activity_export import get_activities
 from ecodev_core.app_stats.api_key import api_key_auth
 from ecodev_core.app_stats.constants import ACTIVITIES_TAG
+from ecodev_core.app_stats.constants import HOUR_GRAIN
+from ecodev_core.app_stats.constants import MONTH_GRAIN
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
 from ecodev_core.app_stats.contract import ProjectExport
@@ -55,7 +57,7 @@ def _activities_endpoint(
         to_date: datetime | None = Query(default=None),
         method: str | None = Query(default=None),
         page_size: int = Query(default=500, ge=1, le=5000),
-        granularity: str = Query(default='hour', pattern='^(hour|month)$'),
+        granularity: str = Query(default=HOUR_GRAIN, pattern=f'^({HOUR_GRAIN}|{MONTH_GRAIN})$'),
         group_by_method: bool = Query(default=True),
         group_by_application: bool = Query(default=True),
         session: Session = Depends(get_session),

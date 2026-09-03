@@ -14,6 +14,7 @@ from sqlmodel import Session
 from ecodev_core.app_activity import AppActivity
 from ecodev_core.app_stats.constants import DEFAULT_PAGE_SIZE
 from ecodev_core.app_stats.constants import HOUR_GRAIN
+from ecodev_core.app_stats.constants import MONTH_GRAIN
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
 
@@ -96,7 +97,7 @@ def get_activities(
     last_emitted_period = page_rows[-1].period_start
 
     if overflow_period == last_emitted_period:
-        next_from_date = last_emitted_period + _one_period(granularity)
+        next_from_date = _next_period_start(last_emitted_period, granularity)
     else:
         page_rows = [r for r in page_rows if r.period_start < overflow_period]
         next_from_date = overflow_period
@@ -121,13 +122,14 @@ def _to_export(r, granularity: str) -> ActivityExport:
     )
 
 
-def _one_period(granularity: str) -> timedelta:
+def _next_period_start(period_start: datetime, granularity: str) -> datetime:
     """
-    Returns the forward-advance step for the degenerate cursor case.
+    Returns the start of the bucket following period_start so an oversized bucket
+    advances the cursor to the next clean bucket boundary without skipping it.
     """
-    if granularity == 'month':
-        return timedelta(days=32)
-    return timedelta(hours=1)
+    if granularity == MONTH_GRAIN:
+        return (period_start.replace(day=1) + timedelta(days=31)).replace(day=1)
+    return period_start + timedelta(hours=1)
 
 
 def _normalize_utc(dt: datetime) -> datetime:

@@ -11,6 +11,7 @@ from typing import TypeVar
 
 from sqlmodel import Session
 
+from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.pydantic_utils import CustomFrozen
 from ecodev_core.pydantic_utils import Frozen
 
@@ -26,7 +27,7 @@ class ActivityExport(Frozen):
     """
     application: str
     period_start: datetime
-    granularity: str = 'hour'
+    granularity: str = HOUR_GRAIN
     method: str = ''
     activity_count: int
     unique_users: int
