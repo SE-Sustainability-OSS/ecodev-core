@@ -39,6 +39,6 @@ prod-launch:            ##@docker Launch production containers
 	docker-compose -f docker-compose.yml up -d
 
 publish:           ##@poetry Build and publish a new patched ecodev_core version
-	python3 -m poetry version patch
-	python3 -m poetry build
-	python3 -m poetry publish
+	poetry version patch
+	poetry build
+	poetry publish
