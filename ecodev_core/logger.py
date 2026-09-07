@@ -74,7 +74,6 @@ class MyFormatter(logging.Formatter):
         time = self.formatTime(record, self.date_fmt)
         prefix = f'{time} | {record.levelname} | {record.process} | {cpath}'
 
-        # fixing max length
         limited_lines = []
         for line in record.getMessage().split(str('\n')):
             while len(line) > self.message_width:
@@ -85,10 +84,8 @@ class MyFormatter(logging.Formatter):
                 limited_lines.append(line[:splitting_position])
                 line = line[splitting_position:]
 
-            # don't forget end of line
             limited_lines.append(line)
 
-        # formatting final message
         final_message = ''.join(f'{prefix} | {line}\n' for line in limited_lines).rstrip()
 
         return f'{self.FORMATS[record.levelno]}{final_message}{self.reset}'
@@ -112,7 +109,6 @@ def config_log(logger, level, formatter):
         formatter: Logging format
 
     """
-    # Get the root logger (because no name is specified in getLogger())
     logger.setLevel(level)
     logger.propagate = False
 

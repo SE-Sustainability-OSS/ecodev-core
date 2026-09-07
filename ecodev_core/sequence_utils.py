@@ -1,7 +1,6 @@
 """
 Module implementing helper methods working with sequences
 """
-
 from typing import Generator
 from typing import Sequence
 from typing import TypeVar
