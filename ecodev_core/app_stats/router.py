@@ -1,0 +1,93 @@
+"""
+Router factory for the /stats producer endpoints.
+/stats/activities is always registered.
+/stats/projects is only registered when a ProjectStatsAdapter is supplied.
+"""
+from datetime import datetime
+from typing import Callable
+
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import Query
+from sqlmodel import Session
+
+from ecodev_core.app_stats.activity_export import get_activities
+from ecodev_core.app_stats.api_key import api_key_auth
+from ecodev_core.app_stats.constants import ACTIVITIES_TAG
+from ecodev_core.app_stats.constants import HOUR_GRAIN
+from ecodev_core.app_stats.constants import MONTH_GRAIN
+from ecodev_core.app_stats.contract import ActivityExport
+from ecodev_core.app_stats.contract import PagedResponse
+from ecodev_core.app_stats.contract import ProjectExport
+from ecodev_core.app_stats.contract import ProjectStatsAdapter
+from ecodev_core.db_connection import get_session
+
+
+def get_stats_router(
+        prefix: str = '/stats',
+        adapter: ProjectStatsAdapter | None = None,
+        dependency: Callable = api_key_auth,
+) -> APIRouter:
+    """
+    Returns a FastAPI router with stats endpoints.
+
+    When `adapter` is None, only /activities is registered (activities-only producer).
+    When `adapter` is provided, /projects is also registered via a closure that
+    captures `adapter` so FastAPI sees only the expected query parameters.
+    """
+    router = APIRouter(prefix=prefix, tags=[ACTIVITIES_TAG],
+                       dependencies=[Depends(dependency)])
+    router.add_api_route('/activities', _activities_endpoint,
+                         response_model=PagedResponse[ActivityExport], methods=['GET'])
+    if adapter is not None:
+        def _projects_closure(
+                from_date: datetime | None = Query(default=None),
+                to_date: datetime | None = Query(default=None),
+                session: Session = Depends(get_session),
+        ) -> list[ProjectExport]:
+            return _projects_endpoint(adapter, from_date, to_date, session)
+
+        router.add_api_route('/projects', _projects_closure,
+                             response_model=list[ProjectExport], methods=['GET'])
+    return router
+
+
+def _activities_endpoint(
+        from_date: datetime | None = Query(default=None),
+        to_date: datetime | None = Query(default=None),
+        method: str | None = Query(default=None),
+        page_size: int = Query(default=500, ge=1, le=5000),
+        granularity: str = Query(default=HOUR_GRAIN, pattern=f'^({HOUR_GRAIN}|{MONTH_GRAIN})$'),
+        group_by_method: bool = Query(default=True),
+        group_by_application: bool = Query(default=True),
+        session: Session = Depends(get_session),
+) -> PagedResponse[ActivityExport]:
+    """
+    Returns a page of time-bucketed activity rows, ordered ascending by period_start.
+    Pass `next_from_date` from the previous response as `from_date` to advance the cursor.
+    Use `granularity=month` for monthly-grain data with pre-aggregated `unique_users`.
+    Pass `group_by_method=false&group_by_application=false` to get one row per period
+    whose `unique_users` is additive across rows.
+    """
+    return get_activities(
+        session=session,
+        from_date=from_date,
+        to_date=to_date,
+        method=method,
+        page_size=page_size,
+        granularity=granularity,
+        group_by_method=group_by_method,
+        group_by_application=group_by_application,
+    )
+
+
+def _projects_endpoint(
+        adapter: ProjectStatsAdapter,
+        from_date: datetime | None,
+        to_date: datetime | None,
+        session: Session,
+) -> list[ProjectExport]:
+    """
+    Returns all project snapshots from the supplied adapter in a single response.
+    """
+    return list(adapter.list_projects(session, from_date, to_date))

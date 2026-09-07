@@ -37,7 +37,7 @@ jobs:
           POSTGRES_HOST: postgres
         with:
           image: ecodev_core:latest
-          options:          
+          options:
             -v ${{github.workspace}}/tests:/app/tests
             -v ${{github.workspace}}/ecodev_core:/app/app
             -v ${{github.workspace}}/config:/app/config
@@ -47,7 +47,7 @@ jobs:
           run: |
             set -e
             python3 -m pip install coverage anybadge
-            coverage run -m unittest discover 
+            coverage run -m unittest discover
             coverage html
             coverage report -m  --fail-under=60 --precision=2 > coverage.log
             cat coverage.log

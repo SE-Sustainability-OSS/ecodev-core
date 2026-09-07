@@ -15,7 +15,8 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 from pydantic import Field
-from sqlalchemy import Engine, text
+from sqlalchemy import Engine
+from sqlalchemy import text
 from sqlmodel import create_engine
 from sqlmodel import SQLModel
 
@@ -28,6 +29,7 @@ from ecodev_core.pydantic_utils import Frozen
 
 
 log = logger_get(__name__)
+
 
 class SafeTestCase(TestCase):
     """
@@ -143,11 +145,12 @@ class SafeTestCase(TestCase):
 
         return _wrapped
 
+
 class PostGisSafeTestCase(SafeTestCase):
     """
     SafeTestCase that enables PostGIS before schema creation.
     """
-    
+
     @classmethod
     def _enable_postgis(cls) -> None:
         """Enable PostGIS on the test database."""
@@ -156,7 +159,6 @@ class PostGisSafeTestCase(SafeTestCase):
             for extension in ['postgis', 'postgis_raster', 'btree_gist']:
                 conn.execute(text(f'CREATE EXTENSION IF NOT EXISTS {extension}'))
         engine.dispose()
-
 
     @classmethod
     def create_test_db(cls) -> None:
@@ -169,7 +171,7 @@ class PostGisSafeTestCase(SafeTestCase):
             f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{TEST_DB}'",
             f'DROP DATABASE IF EXISTS {TEST_DB}',
             f'CREATE DATABASE {TEST_DB}'])
-        
+
         cls._enable_postgis()
 
         SQLModel.metadata.create_all(cls.test_engine)

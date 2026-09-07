@@ -7,8 +7,16 @@ from ecodev_core.app_activity import fastapi_monitor
 from ecodev_core.app_activity import get_method
 from ecodev_core.app_activity import get_recent_activities
 from ecodev_core.app_rights import AppRight
+from ecodev_core.app_stats import ActivityExport
+from ecodev_core.app_stats import api_key_auth
+from ecodev_core.app_stats import get_activities
+from ecodev_core.app_stats import get_stats_router
+from ecodev_core.app_stats import PagedResponse
+from ecodev_core.app_stats import ProjectExport
+from ecodev_core.app_stats import ProjectStatsAdapter
 from ecodev_core.app_user import AppUser
 from ecodev_core.app_user import select_user
+from ecodev_core.app_user import select_user_by_id
 from ecodev_core.app_user import upsert_app_users
 from ecodev_core.auth_configuration import AUTH
 from ecodev_core.authentication import attempt_to_log
@@ -95,11 +103,12 @@ from ecodev_core.safe_utils import boolify
 from ecodev_core.safe_utils import datify
 from ecodev_core.safe_utils import floatify
 from ecodev_core.safe_utils import intify
+from ecodev_core.safe_utils import PostGisSafeTestCase
 from ecodev_core.safe_utils import safe_clt
 from ecodev_core.safe_utils import SafeTestCase
 from ecodev_core.safe_utils import SimpleReturn
 from ecodev_core.safe_utils import stringify
-from ecodev_core.safe_utils import PostGisSafeTestCase
+from ecodev_core.sequence_utils import batch_sequence
 from ecodev_core.settings import SETTINGS
 from ecodev_core.settings import Settings
 from ecodev_core.token_banlist import TokenBanlist
@@ -107,7 +116,6 @@ from ecodev_core.version import db_to_value
 from ecodev_core.version import get_row_versions
 from ecodev_core.version import get_versions
 from ecodev_core.version import Version
-from ecodev_core.sequence_utils import batch_sequence
 
 __all__ = [
     'AUTH', 'Token', 'get_app_services', 'attempt_to_log', 'get_current_user', 'is_admin_user',
@@ -120,6 +128,7 @@ __all__ = [
     'enum_converter', 'ServerSideFilter', 'get_rows', 'count_rows', 'ServerSideField', 'get_raw_df',
     'generic_insertion', 'custom_equal', 'is_authorized_user', 'get_method', 'AppActivity',
     'fastapi_monitor', 'dash_monitor', 'is_monitoring_user', 'get_recent_activities', 'select_user',
+    'select_user_by_id',
     'get_access_token', 'safe_get_user', 'backup', 'group_by', 'get_excelfile', 'upsert_new_user',
     'datify', 'safe_drop_columns', 'get_value', 'is_null', 'send_email', 'first_func_or_default',
     'sort_by_keys', 'sort_by_values', 'Settings', 'load_yaml_file', 'Deployment', 'Version',
@@ -128,4 +137,6 @@ __all__ = [
     'SETTINGS', 'add_missing_enum_values', 'ban_token', 'TokenBanlist', 'is_banned',
     'get_lang', 'set_lang', 'Lang', 'localized_col', 'I18nMixin', 'add_missing_columns',
     'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient', 'handle_response',
-    'API_AUTH', 'batch_sequence', 'PostGisSafeTestCase']
+    'batch_sequence', 'PostGisSafeTestCase',
+    'ActivityExport', 'ProjectExport', 'PagedResponse', 'ProjectStatsAdapter',
+    'get_activities', 'api_key_auth', 'get_stats_router']

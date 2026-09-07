@@ -15,3 +15,6 @@ database:
 app_name: ecodev-core
 
 fernet_key: 3333333333333333333333333333333333333333333=
+
+stats_api:
+   api_key: null

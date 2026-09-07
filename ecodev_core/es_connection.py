@@ -71,7 +71,7 @@ def retrieve_es_fields(body: dict[str, Any],
     return get_es_client().search(index=index, body=body, size=size)
 
 
-def retrieve_es_fields_with_scroll(body: dict, 
+def retrieve_es_fields_with_scroll(body: dict,
                                    index: str,
                                    page_size: int = 1000,
                                    scroll_ttl: str = '1m'

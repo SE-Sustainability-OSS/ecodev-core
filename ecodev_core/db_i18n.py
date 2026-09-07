@@ -48,7 +48,7 @@ class I18nMixin:
     """
     I18n (localization) mixin for string attributes of pydantic BaseModel classes.
 
-    Maps arbitrary string attributes of the class to their localized values. Localized fields 
+    Maps arbitrary string attributes of the class to their localized values. Localized fields
     should be defined following the rules below :
         - The field name must be defined as a key of the private attribute `__localized_fields__`
         - Each field defined in `__localized_fields__` must be present as an attribute for \
@@ -91,15 +91,15 @@ class I18nMixin:
         """
         if field not in cls.__localized_fields__:
             raise AttributeError(f'Field {field!r} is not internationalized.')
-        
+
         available_langs = cls.__localized_fields__[field]
-        
+
         if cls.__fallback_lang__ not in available_langs:
             raise AttributeError(
                 f'Fallback language {cls.__fallback_lang__!r} not available for field {field!r}. '
                 f'Available: {available_langs}'
             )
-        
+
         lang = lang or get_lang()
         if lang not in cls.__localized_fields__[field]:
             raise AttributeError(f'Field {field!r} is not localized to {lang!r}')
@@ -137,7 +137,7 @@ class I18nMixin:
             list[str]: chain of the localized versions of the requested field.
 
         """
-        return [cls._get_localized_field_name(field, lang) 
+        return [cls._get_localized_field_name(field, lang)
                 for lang in cls._get_lang_chain(field, lang)]
 
     def _get_localized(self, field: str, lang: Optional[Lang] = None) -> Optional[str]:
@@ -203,8 +203,8 @@ def localized_col(
             with the name of `field`.
     """
     if not issubclass(db_schema, I18nMixin):
-        raise TypeError(f"{db_schema.__name__} does not inherit from I18nMixin")
-    
+        raise TypeError(f'{db_schema.__name__} does not inherit from I18nMixin')
+
     localized_fields_chain = db_schema.get_localized_field_chain(field, lang)
     coalesce_fields = [getattr(db_schema, field_name) for field_name in localized_fields_chain]
 
