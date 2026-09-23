@@ -2,6 +2,7 @@
 Module testing db upsertion
 """
 from datetime import datetime
+from datetime import timezone
 from typing import Optional
 
 import pandas as pd
@@ -147,16 +148,16 @@ class UpsertorTest(SafeTestCase):
         testing db upsertion
         """
         foo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
-                    bar7=datetime(2025, 3, 17),
+                    bar7=datetime(2025, 3, 17, tzinfo=timezone.utc),
                     bar8=Permission.ADMIN)
         ffoo = UpFoo(bar1='bar', bar2=False, bar3='bbar', bar4=False, bar5=42.42, bar6=42,
-                     bar7=datetime(2025, 3, 17),
+                     bar7=datetime(2025, 3, 17, tzinfo=timezone.utc),
                      bar8=Permission.ADMIN)
         foo2 = UpFoo(bar1='bar', bar2=True, bar3='babar', bar4=False, bar5=42.42, bar6=42,
-                     bar7=datetime(2025, 3, 17),
+                     bar7=datetime(2025, 3, 17, tzinfo=timezone.utc),
                      bar8=Permission.ADMIN)
         foo3 = UpFoo(bar1='bar', bar2=True, bar3='bababar!', bar4=True, bar5=42.41, bar6=41,
-                     bar7=datetime(2025, 3, 18),
+                     bar7=datetime(2025, 3, 18, tzinfo=timezone.utc),
                      bar8=Permission.Consultant, bar9='toto')
 
         # First insert two foos, no version
@@ -232,7 +233,7 @@ class UpsertorTest(SafeTestCase):
         Testing DB insertion for datetime fields
         """
         foo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
-                    bar7=datetime(2025, 3, 17),
+                    bar7=datetime(2025, 3, 17, tzinfo=timezone.utc),
                     bar8=Permission.ADMIN)
 
         with Session(engine) as session:
@@ -244,7 +245,7 @@ class UpsertorTest(SafeTestCase):
         self.assertEqual(len(get_row_versions('up_foo', foos[0].id, session)), 0)
 
         ffoo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
-                     bar7=datetime(2025, 3, 17, 0),
+                     bar7=datetime(2025, 3, 17, 0, tzinfo=timezone.utc),
                      bar8=Permission.ADMIN)
 
         with Session(engine) as session:
@@ -255,7 +256,7 @@ class UpsertorTest(SafeTestCase):
         self.assertEqual(len(get_row_versions('up_foo', foos[0].id, session)), 0)
 
         fffoo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
-                      bar7=datetime(2025, 3, 17, 0, 0),
+                      bar7=datetime(2025, 3, 17, 0, 0, tzinfo=timezone.utc),
                       bar8=Permission.ADMIN)
 
         with Session(engine) as session:
@@ -267,7 +268,7 @@ class UpsertorTest(SafeTestCase):
 
     def test_get_sfields(self):
         foo = UpFoo(bar1='bar', bar2=True, bar3='bar', bar4=False, bar5=42.42, bar6=42,
-                    bar7=datetime(2025, 3, 17),
+                    bar7=datetime(2025, 3, 17, tzinfo=timezone.utc),
                     bar8=Permission.ADMIN)
 
         columns = get_sfield_columns(UpFoo)

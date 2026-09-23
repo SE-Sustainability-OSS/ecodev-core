@@ -2,6 +2,7 @@
 Module implementing the Version table
 """
 from datetime import datetime
+from datetime import timezone
 from enum import Enum
 from enum import EnumType
 from enum import unique
@@ -13,6 +14,8 @@ from sqlmodel import Index
 from sqlmodel import select
 from sqlmodel import Session
 from sqlmodel import SQLModel
+
+from ecodev_core.date_utils import utc_now
 
 
 @unique
@@ -44,7 +47,7 @@ class Version(SQLModel, table=True):  # type: ignore
     """
     __tablename__ = 'version'
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     table: str = Field(index=True)
     column: str = Field(index=True)
     row_id: int = Field(index=True)
@@ -124,7 +127,7 @@ def _value_to_db(value: COL_TYPES, col_type: ColType) -> str | None:
         case ColType.BOOL | ColType.STR | ColType.INT | ColType.FLOAT:
             return str(value)
         case ColType.DATE:
-            return value.strftime('%Y-%m-%d %H:%M:%S.%f')  # type: ignore[union-attr]
+            return value.strftime('%Y-%m-%d %H:%M:%S.%f%z')  # type: ignore[union-attr]
         case ColType.ENUM:
             return value.name  # type: ignore[union-attr]
         case _:
@@ -143,5 +146,9 @@ def db_to_value(db_value: str | None, col_type: type | EnumType) -> COL_TYPES:
     if col_type == bool:
         return db_value == 'True'
     if col_type == datetime:
-        return datetime.strptime(db_value, '%Y-%m-%d %H:%M:%S.%f')
+        try:
+            return datetime.strptime(db_value, '%Y-%m-%d %H:%M:%S.%f%z')
+        except ValueError:
+            # Legacy rows written before tz-aware storage: assume UTC.
+            return datetime.strptime(db_value, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
     return col_type[db_value]  # type: ignore[index]

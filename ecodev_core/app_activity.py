@@ -3,6 +3,7 @@ Module implementing a simple monitoring table
 """
 import inspect
 from datetime import datetime
+from datetime import timezone
 from typing import Optional
 
 from sqlmodel import cast
@@ -17,6 +18,7 @@ from sqlmodel import SQLModel
 
 from ecodev_core.app_user import AppUser
 from ecodev_core.authentication import get_user
+from ecodev_core.date_utils import utc_now
 from ecodev_core.db_connection import engine
 
 
@@ -52,7 +54,7 @@ class AppActivity(AppActivityBase, table=True):  # type: ignore
     """
     __tablename__ = 'app_activity'
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 def dash_monitor(method: str,
@@ -108,7 +110,8 @@ def get_recent_activities(last_date: str, session: Session) -> list[AppActivity]
     """
     Returns all activities that happened after last_date
     """
-    return session.exec(select(AppActivity).where(col(AppActivity.created_at) > last_date)).all()
+    return session.exec(select(AppActivity).where(
+        col(AppActivity.created_at) > _to_utc_date(last_date))).all()
 
 
 def get_monthly_activities(last_date: str, session: Session) -> dict[tuple[int, int], int]:
@@ -119,8 +122,15 @@ def get_monthly_activities(last_date: str, session: Session) -> dict[tuple[int, 
         cast(extract('year', AppActivity.created_at), Integer).label('year'),
         cast(extract('month', AppActivity.created_at), Integer).label('month'),
         func.count().label('count'))
-        .where(col(AppActivity.created_at) > last_date)
+        .where(col(AppActivity.created_at) > _to_utc_date(last_date))
         .group_by(extract('year', AppActivity.created_at), extract('month', AppActivity.created_at))
         .order_by(extract('year', AppActivity.created_at), extract('month', AppActivity.created_at))
     )
     return dict(sorted(((year, month), value) for year, month, value in session.exec(query).all()))
+
+
+def _to_utc_date(date: str) -> datetime:
+    """
+    Parses a 'YYYY/MM/DD' date string into a UTC-aware datetime.
+    """
+    return datetime.strptime(date, '%Y/%m/%d').replace(tzinfo=timezone.utc)

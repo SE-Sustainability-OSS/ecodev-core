@@ -2,6 +2,7 @@
 Low level db filtering methods
 """
 from datetime import datetime
+from datetime import timezone
 from enum import Enum
 from enum import unique
 from typing import Callable
@@ -139,4 +140,4 @@ def _date(year: str) -> datetime:
     """
     Convert the passed str year to a datetime to allow filtering on datetime years.
     """
-    return datetime(year=int(year), month=1, day=1)
+    return datetime(year=int(year), month=1, day=1, tzinfo=timezone.utc)

@@ -7,6 +7,8 @@ from typing import Optional
 from sqlmodel import Field
 from sqlmodel import SQLModel
 
+from ecodev_core.date_utils import utc_now
+
 
 class TokenBanlist(SQLModel, table=True):  # type: ignore
     """
@@ -14,5 +16,5 @@ class TokenBanlist(SQLModel, table=True):  # type: ignore
     """
     __tablename__ = 'token_banlist'
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     token: str = Field(index=True)

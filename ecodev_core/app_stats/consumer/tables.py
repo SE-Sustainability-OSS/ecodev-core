@@ -9,6 +9,8 @@ from typing import Optional
 from sqlmodel import Field
 from sqlmodel import SQLModel
 
+from ecodev_core.date_utils import utc_now
+
 
 class RemoteActivity(SQLModel, table=True):  # type: ignore
     """
@@ -28,7 +30,7 @@ class RemoteActivity(SQLModel, table=True):  # type: ignore
     method: str = Field(default='', index=True)
     activity_count: int
     unique_users: int
-    ingested_at: datetime = Field(default_factory=datetime.utcnow)
+    ingested_at: datetime = Field(default_factory=utc_now)
 
 
 class RemoteAppProject(SQLModel, table=True):  # type: ignore
@@ -48,4 +50,4 @@ class RemoteAppProject(SQLModel, table=True):  # type: ignore
     description: Optional[str] = None
     client: Optional[str] = None
     project_type: Optional[str] = None
-    ingested_at: datetime = Field(default_factory=datetime.utcnow)
+    ingested_at: datetime = Field(default_factory=utc_now)

@@ -218,7 +218,7 @@ def is_banned(token: str) -> bool:
     NB: Clean the TokenBanlist table (deleting old entries) on the fly
     """
     with Session(engine) as session:
-        threshold = datetime.now() - timedelta(minutes=EXPIRATION_LENGTH)
+        threshold = datetime.now(timezone.utc) - timedelta(minutes=EXPIRATION_LENGTH)
         for token_banned in session.exec(
                 select(TokenBanlist).where(TokenBanlist.created_at <= threshold)).all():
             session.delete(token_banned)
