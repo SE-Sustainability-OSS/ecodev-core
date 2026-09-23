@@ -17,6 +17,7 @@ from ecodev_core.app_stats.consumer.tables import RemoteActivity
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import ProjectExport
+from ecodev_core.date_utils import utc_now
 
 
 def delete_lookback_activities(
@@ -65,7 +66,7 @@ def upsert_remote_activities(
     """
     Inserts remote activity rows.  Call after `delete_lookback_activities` to avoid duplicates.
     """
-    ingested_at = datetime.utcnow()
+    ingested_at = utc_now()
     session.add_all([
         RemoteActivity(
             application=application,
@@ -89,7 +90,7 @@ def upsert_remote_projects(
     """
     Replaces remote project rows.  Call after `delete_lookback_projects`.
     """
-    ingested_at = datetime.utcnow()
+    ingested_at = utc_now()
     session.add_all([
         RemoteAppProject(
             application=application,

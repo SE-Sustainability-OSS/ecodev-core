@@ -38,6 +38,7 @@ from ecodev_core.backup import backup
 from ecodev_core.check_dependencies import check_dependencies
 from ecodev_core.check_dependencies import compute_dependencies
 from ecodev_core.custom_equal import custom_equal
+from ecodev_core.date_utils import utc_now
 from ecodev_core.db_connection import create_db_and_tables
 from ecodev_core.db_connection import DB_URL
 from ecodev_core.db_connection import delete_table
@@ -139,4 +140,4 @@ __all__ = [
     'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient', 'handle_response',
     'batch_sequence', 'PostGisSafeTestCase',
     'ActivityExport', 'ProjectExport', 'PagedResponse', 'ProjectStatsAdapter',
-    'get_activities', 'api_key_auth', 'get_stats_router']
+    'get_activities', 'api_key_auth', 'get_stats_router', 'utc_now']

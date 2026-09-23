@@ -43,13 +43,13 @@ TEST_API_KEY = 'test-api-key-abc123'
 
 SEED_ACTIVITIES = [
     {'user': 'alice', 'application': 'cf_tool', 'method': 'upload_file',
-     'created_at': datetime(2026, 1, 15, 8, 10)},
+     'created_at': datetime(2026, 1, 15, 8, 10, tzinfo=timezone.utc)},
     {'user': 'alice', 'application': 'cf_tool', 'method': 'upload_file',
-     'created_at': datetime(2026, 1, 15, 8, 45)},
+     'created_at': datetime(2026, 1, 15, 8, 45, tzinfo=timezone.utc)},
     {'user': 'bob', 'application': 'cf_tool', 'method': 'compute_pcf',
-     'created_at': datetime(2026, 1, 15, 9, 0)},
+     'created_at': datetime(2026, 1, 15, 9, 0, tzinfo=timezone.utc)},
     {'user': 'carol', 'application': 'cf_tool', 'method': 'compute_pcf',
-     'created_at': datetime(2026, 2, 1, 10, 0)},
+     'created_at': datetime(2026, 2, 1, 10, 0, tzinfo=timezone.utc)},
 ]
 
 SEED_PROJECTS = [
@@ -57,14 +57,14 @@ SEED_PROJECTS = [
         project_id='proj-001',
         name='Carbon Audit',
         creator='alice',
-        created_at=datetime(2026, 1, 10),
+        created_at=datetime(2026, 1, 10, tzinfo=timezone.utc),
         project_type='pcf_only',
     ),
     ProjectExport(
         project_id='proj-002',
         name='Scope 3',
         creator='bob',
-        created_at=datetime(2026, 2, 1),
+        created_at=datetime(2026, 2, 1, tzinfo=timezone.utc),
         project_type='cft_only',
     ),
 ]
@@ -263,7 +263,7 @@ class AppStatsConsumerTest(SafeTestCase):
         return [
             ActivityExport(
                 application='cf_tool',
-                period_start=datetime(2026, 1, 15, 8, 0, 0),
+                period_start=datetime(2026, 1, 15, 8, 0, 0, tzinfo=timezone.utc),
                 granularity='hour',
                 method='compute_pcf',
                 activity_count=3,
@@ -271,7 +271,7 @@ class AppStatsConsumerTest(SafeTestCase):
             ),
             ActivityExport(
                 application='cf_tool',
-                period_start=datetime(2026, 1, 16, 10, 0, 0),
+                period_start=datetime(2026, 1, 16, 10, 0, 0, tzinfo=timezone.utc),
                 granularity='hour',
                 method='compute_pcf',
                 activity_count=1,
@@ -285,7 +285,7 @@ class AppStatsConsumerTest(SafeTestCase):
                 project_id='proj-001',
                 name='Carbon Audit',
                 creator='alice',
-                created_at=datetime(2026, 1, 10, 9, 0, 0),
+                created_at=datetime(2026, 1, 10, 9, 0, 0, tzinfo=timezone.utc),
                 project_type='pcf_only',
             )
         ]
@@ -314,7 +314,7 @@ class AppStatsConsumerTest(SafeTestCase):
         The same `from_date` and `granularity` must reach both delete and upsert calls.
         """
         activities = self._sample_activities()
-        lookback = datetime(2026, 1, 1, 0, 0, 0)
+        lookback = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         with Session(engine) as session:
             delete_lookback_activities(session, 'cf_tool', lookback, granularity='hour')
             upsert_remote_activities(session, 'cf_tool', activities, granularity='hour')
@@ -359,7 +359,7 @@ class AppStatsContractTest(SafeTestCase):
     def test_activity_export_round_trip(self):
         original = ActivityExport(
             application='test_app',
-            period_start=datetime(2026, 3, 1, 14, 0, 0),
+            period_start=datetime(2026, 3, 1, 14, 0, 0, tzinfo=timezone.utc),
             granularity='hour',
             method='some_method',
             activity_count=42,
@@ -373,7 +373,7 @@ class AppStatsContractTest(SafeTestCase):
             project_id='abc-123',
             name='Test Project',
             creator='owner@test.com',
-            created_at=datetime(2026, 1, 1, 0, 0, 0),
+            created_at=datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
             project_type='both',
         )
         restored = ProjectExport.model_validate(json.loads(original.model_dump_json()))
@@ -383,7 +383,7 @@ class AppStatsContractTest(SafeTestCase):
         items = [
             ActivityExport(
                 application='app',
-                period_start=datetime(2026, 4, 1, 8, 0, 0),
+                period_start=datetime(2026, 4, 1, 8, 0, 0, tzinfo=timezone.utc),
                 granularity='hour',
                 method='m',
                 activity_count=1,
@@ -391,7 +391,7 @@ class AppStatsContractTest(SafeTestCase):
             )
         ]
         page = PagedResponse[ActivityExport](
-            items=items, next_from_date=datetime(2026, 4, 1, 9, 0, 0)
+            items=items, next_from_date=datetime(2026, 4, 1, 9, 0, 0, tzinfo=timezone.utc)
         )
         raw = page.model_dump_json()
         restored = PagedResponse[ActivityExport].model_validate_json(raw)
@@ -651,13 +651,13 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         Inserts two hour-grain rows (Jan, Feb) and one month-grain row (Jan).
         """
         upsert_remote_activities(session, 'cf_tool', [
-            ActivityExport(application='cf_tool', period_start=datetime(2026, 1, 1, 8, 0),
+            ActivityExport(application='cf_tool', period_start=datetime(2026, 1, 1, 8, 0, tzinfo=timezone.utc),
                            granularity=HOUR_GRAIN, method='m', activity_count=1, unique_users=1),
-            ActivityExport(application='cf_tool', period_start=datetime(2026, 2, 1, 9, 0),
+            ActivityExport(application='cf_tool', period_start=datetime(2026, 2, 1, 9, 0, tzinfo=timezone.utc),
                            granularity=HOUR_GRAIN, method='m', activity_count=2, unique_users=1),
         ], granularity=HOUR_GRAIN)
         upsert_remote_activities(session, 'cf_tool', [
-            ActivityExport(application='cf_tool', period_start=datetime(2026, 1, 1, 0, 0),
+            ActivityExport(application='cf_tool', period_start=datetime(2026, 1, 1, 0, 0, tzinfo=timezone.utc),
                            granularity=MONTH_GRAIN, method='m', activity_count=3, unique_users=2),
         ], granularity=MONTH_GRAIN)
 
@@ -667,7 +667,7 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         """
         with Session(engine) as session:
             self._seed(session)
-            delete_lookback_activities(session, 'cf_tool', datetime(2026, 1, 1),
+            delete_lookback_activities(session, 'cf_tool', datetime(2026, 1, 1, tzinfo=timezone.utc),
                                        granularity=HOUR_GRAIN)
             hour_rows = get_remote_activities(session, application='cf_tool',
                                               granularity=HOUR_GRAIN)
@@ -683,12 +683,12 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         """
         with Session(engine) as session:
             self._seed(session)
-            delete_lookback_activities(session, 'cf_tool', datetime(2026, 2, 1),
+            delete_lookback_activities(session, 'cf_tool', datetime(2026, 2, 1, tzinfo=timezone.utc),
                                        granularity=HOUR_GRAIN)
             rows = get_remote_activities(session, application='cf_tool', granularity=HOUR_GRAIN)
 
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]['period_start'], datetime(2026, 1, 1, 8, 0))
+        self.assertEqual(rows[0]['period_start'], datetime(2026, 1, 1, 8, 0, tzinfo=timezone.utc))
 
     def test_get_remote_activities_from_date_filter(self):
         """
@@ -698,10 +698,10 @@ class AppStatsConsumerScopeTest(SafeTestCase):
             self._seed(session)
             rows = get_remote_activities(session, application='cf_tool',
                                          granularity=HOUR_GRAIN,
-                                         from_date=datetime(2026, 2, 1))
+                                         from_date=datetime(2026, 2, 1, tzinfo=timezone.utc))
 
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]['period_start'], datetime(2026, 2, 1, 9, 0))
+        self.assertEqual(rows[0]['period_start'], datetime(2026, 2, 1, 9, 0, tzinfo=timezone.utc))
 
     def test_get_remote_activities_to_date_filter(self):
         """
@@ -711,10 +711,10 @@ class AppStatsConsumerScopeTest(SafeTestCase):
             self._seed(session)
             rows = get_remote_activities(session, application='cf_tool',
                                          granularity=HOUR_GRAIN,
-                                         to_date=datetime(2026, 2, 1))
+                                         to_date=datetime(2026, 2, 1, tzinfo=timezone.utc))
 
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]['period_start'], datetime(2026, 1, 1, 8, 0))
+        self.assertEqual(rows[0]['period_start'], datetime(2026, 1, 1, 8, 0, tzinfo=timezone.utc))
 
     def test_get_remote_activities_excludes_other_granularities(self):
         """
