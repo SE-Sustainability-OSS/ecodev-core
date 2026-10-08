@@ -5,6 +5,7 @@ httpx==0.*
 itsdangerous==2.*
 openpyxl==3.*
 notebook==6.*
+numpy==2.*
 pandas==2.*
 passlib[bcrypt]==1.*
 progressbar2==4.*
@@ -14,6 +15,7 @@ pydantic-settings==2.*
 pydeps==1.*
 python-jose[cryptography]==3.*
 python-multipart==0.*
+sqlalchemy>=2.0.14,<2.1
 sqlmodel==0.*
 sqladmin==0.15.2
 requests==2.*
