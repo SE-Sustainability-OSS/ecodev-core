@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y postgresql-server-dev-all gcc python3-d
 # install packages
 RUN python3 -m pip install --upgrade pip
 COPY ./requirements-dev.txt /requirements-dev.txt
-RUN python3 -m pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements-dev.txt
+RUN python3 -m pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements-dev.txt
 
 
 #########

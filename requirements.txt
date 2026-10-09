@@ -13,7 +13,7 @@ pydantic[python-dotenv]==2.9.*
 pydantic-settings==2.*
 python-jose[cryptography]==3.*
 python-multipart==0.*
-sqlalchemy>=2.0.14,<2.1
+sqlalchemy==2.*
 sqlmodel==0.*
 sqladmin==0.15.2
 requests==2.*
