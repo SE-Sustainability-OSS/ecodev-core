@@ -17,6 +17,7 @@ from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.app_stats.constants import MONTH_GRAIN
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
+from ecodev_core.date_utils import as_utc
 
 
 def get_activities(
@@ -114,7 +115,7 @@ def _to_export(r, granularity: str) -> ActivityExport:
     """
     return ActivityExport(
         application=r.application,
-        period_start=r.period_start,
+        period_start=as_utc(r.period_start),
         granularity=granularity,
         method=r.method,
         activity_count=r.activity_count,

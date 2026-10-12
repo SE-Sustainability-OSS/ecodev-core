@@ -238,10 +238,14 @@ def add_missing_columns(model: Any, session: Session) -> None:
 
 def _get_default_value(fld: Any, nullable: bool) -> Any:
     """
-    Find if any the field default value
+    Returns the field's default value, calling its default factory if needed; None when nullable.
     """
-    if not nullable and hasattr(fld, 'default') and fld.default is not None:
+    if nullable:
+        return None
+    if getattr(fld, 'default', None) not in (None, PydanticUndefined):
         return fld.default
+    if callable(factory := getattr(fld, 'default_factory', None)):
+        return factory()
     return None
 
 
@@ -350,6 +354,8 @@ def _python_default_to_sql(value: Any, sql_type: str) -> str:
         return str(value)
     if sql_type == 'BOOLEAN':
         return 'TRUE' if value else 'FALSE'
+    if isinstance(value, datetime):
+        return f"'{value.isoformat()}'"
     if sql_type == 'BYTEA':
         if isinstance(value, bytes):
             return f"decode('{value.hex()}', 'hex')"
