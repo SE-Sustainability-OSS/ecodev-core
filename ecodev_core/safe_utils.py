@@ -62,26 +62,35 @@ class SafeTestCase(TestCase):
     @classmethod
     def create_test_db(cls) -> None:
         """
-        Create a test database and the associated tables
+        Create a test database and the associated tables.
+
+        NOTE:
+            Disposes the pool and drops `WITH (FORCE)` so no stale connection
+            lingers: otherwise the async backend termination may not finish
+            before `CREATE DATABASE` runs, leaving the old db still attached.
+            
         """
         if not TEST_DB:
             raise ValueError('Settings.database.db_test_name not defined')
 
         log.info(f'creating db {TEST_DB}')
 
+        cls.test_engine.dispose()
         exec_admin_queries([
-            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{TEST_DB}'",
-            f'DROP DATABASE IF EXISTS {TEST_DB}',
+            f'DROP DATABASE IF EXISTS {TEST_DB} WITH (FORCE)',
             f'CREATE DATABASE {TEST_DB}'])
 
         SQLModel.metadata.create_all(cls.test_engine)
 
     @classmethod
     def delete_test_db(cls) -> None:
+        """
+        Drop the test database, forcing any lingering connection to close first.
+        """
         log.info('deleting db')
+        cls.test_engine.dispose()
         exec_admin_queries([
-            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{TEST_DB}'",
-            f'DROP DATABASE IF EXISTS {TEST_DB}'
+            f'DROP DATABASE IF EXISTS {TEST_DB} WITH (FORCE)'
         ])
 
     def setUp(self, handle_db=True) -> None:
@@ -162,14 +171,22 @@ class PostGisSafeTestCase(SafeTestCase):
 
     @classmethod
     def create_test_db(cls) -> None:
+        """
+        Create a PostGIS-enabled test database and the associated tables.
+
+        NOTE:
+            Disposes the pool and drops `WITH (FORCE)` so no stale connection
+            lingers: otherwise the async backend termination may not finish
+            before `CREATE DATABASE` runs, leaving the old db still attached.
+        """
         if not TEST_DB:
             raise ValueError('Settings.database.db_test_name not defined')
 
         log.info(f'creating db {TEST_DB}')
 
+        cls.test_engine.dispose()
         exec_admin_queries([
-            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{TEST_DB}'",
-            f'DROP DATABASE IF EXISTS {TEST_DB}',
+            f'DROP DATABASE IF EXISTS {TEST_DB} WITH (FORCE)',
             f'CREATE DATABASE {TEST_DB}'])
 
         cls._enable_postgis()
