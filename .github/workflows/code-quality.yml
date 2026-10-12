@@ -27,7 +27,9 @@ jobs:
     
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.LIB_TOKEN }}
 
       - name: Build the Docker image
         run: |
@@ -73,23 +75,17 @@ jobs:
             echo "Pylint score is $PYLINT_SCORE"
             mv pylint.svg ./badges/
 
-      - name: Commit badge files
-        if: ${{ github.ref }} != main
+      - name: Commit and push badges
+        if: github.ref == 'refs/heads/main'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           date > badges/date.log
-          git add badges/coverage.svg
-          git add badges/pylint.svg
-          git add badges/date.log
-          git commit -m "Add badges" -n
-
-      - name: Push badge files
-        if: ${{ github.ref }} != main
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+          git add badges/coverage.svg badges/pylint.svg badges/date.log
+          git diff --cached --quiet && exit 0
+          git commit -m "Update badges [skip ci]" -n
+          git pull --rebase origin main
+          git push origin HEAD:main
 
       - uses: actions/upload-artifact@v4
         with:
