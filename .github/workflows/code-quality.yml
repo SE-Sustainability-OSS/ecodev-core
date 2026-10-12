@@ -2,12 +2,12 @@ name: pipeline
 
 on:
   push:
-    paths-ignore:
-      - 'badges/**'
+
 
 jobs:
   test:
     name: code quality
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     env:
       GITHUB-ACTION: true
@@ -24,7 +24,9 @@ jobs:
           -e POSTGRES_USER=postgres
         ports:
           - 5432:5432
+    
     steps:
+
       - uses: actions/checkout@v3
 
       - name: Build the Docker image

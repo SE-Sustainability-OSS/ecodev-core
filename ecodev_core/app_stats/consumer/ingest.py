@@ -17,6 +17,7 @@ from ecodev_core.app_stats.consumer.tables import RemoteActivity
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import ProjectExport
+from ecodev_core.date_utils import as_utc
 from ecodev_core.date_utils import utc_now
 
 
@@ -71,7 +72,7 @@ def upsert_remote_activities(
         RemoteActivity(
             application=application,
             granularity=granularity,
-            period_start=item.period_start,
+            period_start=as_utc(item.period_start),
             method=item.method,
             activity_count=item.activity_count,
             unique_users=item.unique_users,
@@ -97,8 +98,8 @@ def upsert_remote_projects(
             project_id=item.project_id,
             name=item.name,
             creator=item.creator,
-            created_at=item.created_at,
-            modified_at=item.modified_at,
+            created_at=as_utc(item.created_at),
+            modified_at=as_utc(item.modified_at),
             description=item.description,
             client=item.client,
             project_type=item.project_type,
