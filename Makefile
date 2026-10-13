@@ -37,8 +37,3 @@ all-tests:		##@tests Run all the tests
 
 prod-launch:            ##@docker Launch production containers
 	docker-compose -f docker-compose.yml up -d
-
-publish:           ##@poetry Build and publish a new patched ecodev_core version
-	poetry version patch
-	poetry build
-	poetry publish
