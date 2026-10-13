@@ -13,7 +13,7 @@ jobs:
       - name: checkout ecodev_core
         uses: actions/checkout@v4
         with:
-          token: ${{secrets.LIB_TOKEN}}
+          token: ${{secrets.GITHUB_TOKEN}}
 
       - name: install and configure poetry
         run: |
