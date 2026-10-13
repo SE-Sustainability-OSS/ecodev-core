@@ -22,7 +22,7 @@ def get_backup_url():
 
     user = bck_settings.backup_username
     password = bck_settings.backup_password
-    url = bck_settings.get_backup_url()
+    url = bck_settings.backup_url
     return f'ftp://{user}:{password}@{url}'
 
 
