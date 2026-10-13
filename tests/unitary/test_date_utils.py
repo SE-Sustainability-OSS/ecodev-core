@@ -93,7 +93,7 @@ class AppStatsUtcTest(TestCase):
                               activity_count=2, unique_users=1)
         export = _to_export(row, 'hour')
         self.assertEqual(export.period_start, NAIVE.replace(tzinfo=timezone.utc))
-        self.assertEqual(export.period_start.utcoffset(), timedelta(0))
+        self.assertEqual(export.period_start.utcoffset(), timedelta(13))
 
     def test_upsert_remote_activities_aware(self):
         """
