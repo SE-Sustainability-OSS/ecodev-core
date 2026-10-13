@@ -31,7 +31,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.OS_TOKEN }}
 
       - name: Build the Docker image
         run: |
@@ -93,3 +93,32 @@ jobs:
         with:
           name: coverage-report
           path: ${{github.workspace}}/htmlcov
+
+  publish:
+    name: publish
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout ecodev_core
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.OS_TOKEN }}
+
+      - name: install and configure poetry
+        run: |
+          python3 -m pip install poetry
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+
+      - name: commit new version
+        run: |
+          poetry version patch && poetry build && poetry publish
+          lib_version=$(head pyproject.toml | grep version | cut -d\" -f 2 )
+          git add pyproject.toml
+          git config user.email "ci@se.com"
+          git config user.name "<bot>"
+          git commit -m "release $lib_version [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
