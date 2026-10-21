@@ -33,6 +33,18 @@ class ActivityExport(Frozen):
     unique_users: int
 
 
+class UserActivityExport(Frozen):
+    """
+    One person's activity in one application on one UTC day.
+    `user_key` is a SHA-256 of the trimmed, lower-cased login, so the same person has
+    the same key in every app and the login itself never crosses the wire.
+    """
+    user_key: str
+    application: str
+    period_start: datetime
+    activity_count: int
+
+
 class ProjectExport(Frozen):
     """
     Snapshot of a project as seen by the stats API.

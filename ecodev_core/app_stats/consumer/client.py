@@ -23,9 +23,11 @@ from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.app_stats.constants import JSON_MIME
 from ecodev_core.app_stats.constants import PROJECTS_PATH
 from ecodev_core.app_stats.constants import TO_DATE
+from ecodev_core.app_stats.constants import USERS_PATH
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
 from ecodev_core.app_stats.contract import ProjectExport
+from ecodev_core.app_stats.contract import UserActivityExport
 from ecodev_core.rest_api_client import RestApiClient
 
 # /stats/projects is registered only when a producer supplies a ProjectStatsAdapter,
@@ -63,6 +65,18 @@ class StatsApiClient(RestApiClient):
                                  granularity, ActivityExport, tolerate=(),
                                  group_by_method=group_by_method,
                                  group_by_application=group_by_application)
+
+    def fetch_user_activities(
+            self,
+            from_date: datetime | None = None,
+            to_date: datetime | None = None,
+    ) -> Generator[UserActivityExport, None, None]:
+        """
+        Yields one row per day, application, and pseudonymous person, following pagination.
+        A producer on an older ecodev-core has no /stats/users, so its 404 yields nothing.
+        """
+        yield from _follow_pages(self, USERS_PATH, from_date, to_date, HOUR_GRAIN,
+                                 UserActivityExport, tolerate=ABSENT_ENDPOINT)
 
     def fetch_projects(
             self,

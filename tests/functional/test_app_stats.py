@@ -182,6 +182,30 @@ class AppStatsProducerTest(SafeTestCase):
             from_date = data['next_from_date']
         self.assertGreater(len(seen_keys), 0)
 
+    def test_users_day_keeps_every_person(self):
+        """
+        A day with more people than page_size is returned whole, and the next page
+        does not repeat those people.
+        """
+        seen = []
+        from_date = None
+        for _ in range(10):
+            params = {'page_size': 1}
+            if from_date:
+                params['from_date'] = from_date
+            resp = self.client_no_projects.get(
+                '/stats/users', headers=self._auth_headers(), params=params,
+            )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            seen.extend(item['user_key'] for item in data['items'])
+            if data['next_from_date'] is None:
+                break
+            self.assertNotEqual(data['next_from_date'], from_date)
+            from_date = data['next_from_date']
+        self.assertEqual(len(seen), 3)
+        self.assertEqual(len(seen), len(set(seen)))
+
     def test_oversized_bucket_still_advances(self):
         """
         When a page_size=1 request lands on a bucket that has more rows than page_size,

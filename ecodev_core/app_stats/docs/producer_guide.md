@@ -1,8 +1,8 @@
 # Producer guide — app_stats
 
 Any app using `ecodev_core` can expose its usage statistics over HTTP by wiring
-`get_stats_router()` into its FastAPI instance.  One endpoint is always registered
-(`/stats/activities`).  A second endpoint (`/stats/projects`) is registered only when
+`get_stats_router()` into its FastAPI instance.  `/stats/activities` and
+`/stats/users` are always registered.  `/stats/projects` is registered only when
 the app passes a `ProjectStatsAdapter`.
 
 ---
@@ -133,6 +133,23 @@ The response envelope is:
 Pass `next_from_date` back as `from_date` to fetch the next page.  When `next_from_date`
 is `null` the final page has been reached.  `next_from_date` is a keyset cursor on the
 bucket timestamp, so pages remain stable while new activity arrives.
+
+### `/stats/users` → `PagedResponse[UserActivityExport]`
+
+Always registered. One row per UTC day, application, and person: `user_key`,
+`application`, `period_start`, `activity_count`. `user_key` is the SHA-256 of the
+trimmed, lower-cased login, so the same person gets the same key in every app and the
+login never crosses the wire. The consumer counts distinct `user_key` values over any
+window and any set of apps.
+
+| Query parameter | Type              | Default | Description                   |
+| --------------- | ----------------- | ------- | ----------------------------- |
+| `from_date`   | ISO-8601 datetime | —      | Inclusive day-bucket start    |
+| `to_date`     | ISO-8601 datetime | —      | Exclusive day-bucket end      |
+| `page_size`   | int (1–5000)     | 500     | Max rows per page             |
+
+Paging uses the same `next_from_date` cursor as `/stats/activities`. A day with more
+rows than `page_size` is returned in full, and the cursor moves to the next day.
 
 ### `/stats/projects` → `list[ProjectExport]`
 

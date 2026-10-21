@@ -1,6 +1,6 @@
 """
 Router factory for the /stats producer endpoints.
-/stats/activities is always registered.
+/stats/activities and /stats/users are always registered.
 /stats/projects is only registered when a ProjectStatsAdapter is supplied.
 """
 from datetime import datetime
@@ -12,6 +12,7 @@ from fastapi import Query
 from sqlmodel import Session
 
 from ecodev_core.app_stats.activity_export import get_activities
+from ecodev_core.app_stats.activity_export import get_user_activities
 from ecodev_core.app_stats.api_key import api_key_auth
 from ecodev_core.app_stats.constants import ACTIVITIES_TAG
 from ecodev_core.app_stats.constants import HOUR_GRAIN
@@ -20,6 +21,7 @@ from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
 from ecodev_core.app_stats.contract import ProjectExport
 from ecodev_core.app_stats.contract import ProjectStatsAdapter
+from ecodev_core.app_stats.contract import UserActivityExport
 from ecodev_core.db_connection import get_session
 
 
@@ -31,14 +33,16 @@ def get_stats_router(
     """
     Returns a FastAPI router with stats endpoints.
 
-    When `adapter` is None, only /activities is registered (activities-only producer).
-    When `adapter` is provided, /projects is also registered via a closure that
-    captures `adapter` so FastAPI sees only the expected query parameters.
+    /activities and /users are always registered. When `adapter` is provided,
+    /projects is also registered via a closure that captures `adapter` so FastAPI
+    sees only the expected query parameters.
     """
     router = APIRouter(prefix=prefix, tags=[ACTIVITIES_TAG],
                        dependencies=[Depends(dependency)])
     router.add_api_route('/activities', _activities_endpoint,
                          response_model=PagedResponse[ActivityExport], methods=['GET'])
+    router.add_api_route('/users', _users_endpoint,
+                         response_model=PagedResponse[UserActivityExport], methods=['GET'])
     if adapter is not None:
         def _projects_closure(
                 from_date: datetime | None = Query(default=None),
@@ -78,6 +82,24 @@ def _activities_endpoint(
         granularity=granularity,
         group_by_method=group_by_method,
         group_by_application=group_by_application,
+    )
+
+
+def _users_endpoint(
+        from_date: datetime | None = Query(default=None),
+        to_date: datetime | None = Query(default=None),
+        page_size: int = Query(default=500, ge=1, le=5000),
+        session: Session = Depends(get_session),
+) -> PagedResponse[UserActivityExport]:
+    """
+    Returns a page of one row per UTC day, application, and pseudonymous person.
+    Pass `next_from_date` from the previous response as `from_date` to advance the cursor.
+    """
+    return get_user_activities(
+        session=session,
+        from_date=from_date,
+        to_date=to_date,
+        page_size=page_size,
     )
 
 

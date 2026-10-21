@@ -6,6 +6,7 @@ TIMEOUT = 30
 
 ACTIVITIES_PATH = '/stats/activities'
 PROJECTS_PATH = '/stats/projects'
+USERS_PATH = '/stats/users'
 
 ACTIVITIES_TAG = 'App Stats'
 
@@ -20,6 +21,7 @@ GRANULARITY = 'granularity'
 GROUP_BY_METHOD = 'group_by_method'
 GROUP_BY_APPLICATION = 'group_by_application'
 HOUR_GRAIN = 'hour'
+DAY_GRAIN = 'day'
 MONTH_GRAIN = 'month'
 API_KEY_HEADER = 'X-API-Key'
 ACCEPT_HEADER = 'Accept'

@@ -1,9 +1,11 @@
 """
-Retriever that aggregates AppActivity into time-bucketed ActivityExport rows with cursor paging.
+Retrievers that aggregate AppActivity into time-bucketed export rows with cursor paging.
 """
+import hashlib
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
+from typing import Callable
 
 from sqlalchemy import literal
 from sqlmodel import col
@@ -12,11 +14,13 @@ from sqlmodel import select
 from sqlmodel import Session
 
 from ecodev_core.app_activity import AppActivity
+from ecodev_core.app_stats.constants import DAY_GRAIN
 from ecodev_core.app_stats.constants import DEFAULT_PAGE_SIZE
 from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.app_stats.constants import MONTH_GRAIN
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import PagedResponse
+from ecodev_core.app_stats.contract import UserActivityExport
 from ecodev_core.date_utils import as_utc
 
 
@@ -84,28 +88,108 @@ def get_activities(
     if method is not None:
         stmt = stmt.where(col(AppActivity.method) == method)
 
-    stmt = stmt.limit(page_size + 1)
-    rows = session.exec(stmt).all()
+    rows = _rows_for_page(session, stmt, period, page_size)
+    return _paged(rows, page_size, granularity, lambda r: _to_export(r, granularity))
 
-    if len(rows) <= page_size:
-        return PagedResponse(
-            items=[_to_export(r, granularity) for r in rows],
-            next_from_date=None,
+
+def get_user_activities(
+        session: Session,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
+        page_size: int = DEFAULT_PAGE_SIZE,
+) -> PagedResponse[UserActivityExport]:
+    """
+    Returns a page of one row per (UTC day, application, person), ordered by day.
+
+    The consumer counts distinct `user_key` values over any window and any set of apps,
+    so a person active on several days or in several apps is counted once.
+    Paging follows the same `next_from_date` cursor as `get_activities`.
+    """
+    period = func.date_trunc(DAY_GRAIN, col(AppActivity.created_at))
+    application_col = func.coalesce(col(AppActivity.application), '')
+    stmt = (
+        select(
+            application_col.label('application'),
+            period.label('period_start'),
+            col(AppActivity.user).label('user'),
+            func.count().label('activity_count'),
         )
+        .where(col(AppActivity.user).is_not(None))
+        .group_by(period, application_col, col(AppActivity.user))
+        .order_by(period)
+    )
+    if from_date is not None:
+        stmt = stmt.where(period >= _normalize_utc(from_date))
+    if to_date is not None:
+        stmt = stmt.where(period < _normalize_utc(to_date))
+
+    rows = _rows_for_page(session, stmt, period, page_size)
+    return _paged(rows, page_size, DAY_GRAIN, _to_user_export)
+
+
+def user_key(user: str) -> str:
+    """
+    Pseudonymous key shared by every app for the same login.
+    """
+    return hashlib.sha256(user.strip().lower().encode()).hexdigest()
+
+
+def _rows_for_page(session: Session, statement, period, page_size: int) -> list:
+    """
+    One page of period-ordered rows, with a split bucket completed.
+
+    NOTE: The first read stops at page_size plus one. When that extra row is still
+    inside the last bucket, a second read loads the whole bucket so none of its
+    rows are dropped when the cursor moves on.
+    """
+    rows = list(session.exec(statement.limit(page_size + 1)).all())
+    if len(rows) <= page_size:
+        return rows
+    if rows[page_size].period_start != rows[page_size - 1].period_start:
+        return rows
+    bucket = rows[page_size - 1].period_start
+    complete = list(session.exec(statement.where(period == bucket)).all())
+    held = [row for row in rows if row.period_start == bucket]
+    if len(complete) < len(held):
+        return rows
+    earlier = [row for row in rows if row.period_start < bucket]
+    return earlier + complete
+
+
+def _paged(rows: list, page_size: int, granularity: str, convert: Callable) -> PagedResponse:
+    """
+    Cuts one page of period-ordered rows without splitting a bucket across pages.
+
+    `next_from_date` is the first bucket not yet emitted. When one bucket alone exceeds
+    `page_size`, every row of that bucket is emitted and the cursor moves to the next
+    bucket. That page can be larger than `page_size`.
+    """
+    if len(rows) <= page_size:
+        return PagedResponse(items=[convert(r) for r in rows], next_from_date=None)
 
     page_rows = rows[:page_size]
     overflow_period = rows[page_size].period_start
     last_emitted_period = page_rows[-1].period_start
-
     if overflow_period == last_emitted_period:
-        next_from_date = _next_period_start(last_emitted_period, granularity)
-    else:
-        page_rows = [r for r in page_rows if r.period_start < overflow_period]
-        next_from_date = overflow_period
-
+        return PagedResponse(
+            items=[convert(row) for row in rows],
+            next_from_date=_next_period_start(overflow_period, granularity),
+        )
     return PagedResponse(
-        items=[_to_export(r, granularity) for r in page_rows],
-        next_from_date=next_from_date,
+        items=[convert(row) for row in page_rows if row.period_start < overflow_period],
+        next_from_date=overflow_period,
+    )
+
+
+def _to_user_export(r) -> UserActivityExport:
+    """
+    Converts one grouped row to a UserActivityExport, hashing the login.
+    """
+    return UserActivityExport(
+        user_key=user_key(r.user),
+        application=r.application,
+        period_start=as_utc(r.period_start),
+        activity_count=r.activity_count,
     )
 
 
@@ -130,6 +214,8 @@ def _next_period_start(period_start: datetime, granularity: str) -> datetime:
     """
     if granularity == MONTH_GRAIN:
         return (period_start.replace(day=1) + timedelta(days=31)).replace(day=1)
+    if granularity == DAY_GRAIN:
+        return period_start + timedelta(days=1)
     return period_start + timedelta(hours=1)
 
 
