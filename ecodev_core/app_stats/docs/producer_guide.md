@@ -148,7 +148,8 @@ window and any set of apps.
 | `to_date`     | ISO-8601 datetime | —      | Exclusive day-bucket end      |
 | `page_size`   | int (1–5000)     | 500     | Max rows per page             |
 
-Paging uses the same `next_from_date` cursor as `/stats/activities`. A day with more
+Paging uses the same `next_from_date` cursor as `/stats/activities`.
+A day with more
 rows than `page_size` is returned in full, and the cursor moves to the next day.
 
 ### `/stats/projects` → `list[ProjectExport]`
