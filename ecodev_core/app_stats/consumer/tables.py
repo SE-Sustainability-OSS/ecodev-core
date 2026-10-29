@@ -33,6 +33,23 @@ class RemoteActivity(SQLModel, table=True):  # type: ignore
     ingested_at: datetime = Field(default_factory=utc_now)
 
 
+class RemoteUserActivity(SQLModel, table=True):  # type: ignore
+    """
+    One person's activity in one remote application on one UTC day.
+
+    Keyed on (application, period_start, user_key). Counting distinct `user_key` over
+    any window and any set of applications gives a true people count.
+    """
+    __tablename__ = 'remote_user_activity'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    application: str = Field(index=True)
+    period_start: datetime = Field(index=True)
+    user_key: str = Field(index=True)
+    activity_count: int
+    ingested_at: datetime = Field(default_factory=utc_now)
+
+
 class RemoteAppProject(SQLModel, table=True):  # type: ignore
     """
     Project snapshot ingested from a remote producer app.

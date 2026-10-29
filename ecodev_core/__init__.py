@@ -14,6 +14,7 @@ from ecodev_core.app_stats import get_stats_router
 from ecodev_core.app_stats import PagedResponse
 from ecodev_core.app_stats import ProjectExport
 from ecodev_core.app_stats import ProjectStatsAdapter
+from ecodev_core.app_stats import UserActivityExport
 from ecodev_core.app_user import AppUser
 from ecodev_core.app_user import select_user
 from ecodev_core.app_user import select_user_by_id
@@ -140,4 +141,4 @@ __all__ = [
     'encrypt_value', 'decrypt_value', 'get_rest_api_client', 'RestApiClient', 'handle_response',
     'batch_sequence', 'PostGisSafeTestCase',
     'ActivityExport', 'ProjectExport', 'PagedResponse', 'ProjectStatsAdapter',
-    'get_activities', 'api_key_auth', 'get_stats_router', 'utc_now']
+    'UserActivityExport', 'get_activities', 'api_key_auth', 'get_stats_router', 'utc_now']

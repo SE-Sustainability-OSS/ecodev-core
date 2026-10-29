@@ -15,8 +15,10 @@ from sqlmodel import Session
 from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.app_stats.consumer.tables import RemoteActivity
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
+from ecodev_core.app_stats.consumer.tables import RemoteUserActivity
 from ecodev_core.app_stats.contract import ActivityExport
 from ecodev_core.app_stats.contract import ProjectExport
+from ecodev_core.app_stats.contract import UserActivityExport
 from ecodev_core.date_utils import as_utc
 from ecodev_core.date_utils import utc_now
 
@@ -79,6 +81,47 @@ def upsert_remote_activities(
             ingested_at=ingested_at,
         )
         for item in activities
+    ])
+    session.commit()
+
+
+def delete_lookback_user_activities(
+        session: Session,
+        application: str,
+        from_date: datetime,
+) -> None:
+    """
+    Deletes RemoteUserActivity rows for `application` with period_start >= `from_date`.
+    Pass the same `from_date` used in the fetch call so repeated runs stay idempotent.
+    """
+    session.exec(
+        delete(RemoteUserActivity)
+        .where(col(RemoteUserActivity.application) == application)
+        .where(col(RemoteUserActivity.period_start) >= from_date)
+    )
+    session.commit()
+
+
+def upsert_remote_user_activities(
+        session: Session,
+        application: str,
+        rows: list[UserActivityExport],
+) -> None:
+    """
+    Inserts remote per-person day rows. Call after `delete_lookback_user_activities`.
+
+    The registry name is stored as `application`, matching RemoteActivity rows.
+    """
+    ingested_at = utc_now()
+    session.add_all([
+        RemoteUserActivity(
+            application=application,
+            period_start=as_utc(item.period_start),
+            user_key=item.user_key,
+            activity_count=item.activity_count,
+            ingested_at=ingested_at,
+        )
+        for item in rows
     ])
     session.commit()
 

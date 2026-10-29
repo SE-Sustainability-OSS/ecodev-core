@@ -8,21 +8,27 @@ Import explicitly in consumer apps:
 from ecodev_core.app_stats.consumer.client import StatsApiClient
 from ecodev_core.app_stats.consumer.ingest import delete_lookback_activities
 from ecodev_core.app_stats.consumer.ingest import delete_lookback_projects
+from ecodev_core.app_stats.consumer.ingest import delete_lookback_user_activities
 from ecodev_core.app_stats.consumer.ingest import upsert_remote_activities
 from ecodev_core.app_stats.consumer.ingest import upsert_remote_projects
+from ecodev_core.app_stats.consumer.ingest import upsert_remote_user_activities
 from ecodev_core.app_stats.consumer.processing import get_remote_activities
 from ecodev_core.app_stats.consumer.processing import get_remote_projects
 from ecodev_core.app_stats.consumer.tables import RemoteActivity
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
+from ecodev_core.app_stats.consumer.tables import RemoteUserActivity
 
 __all__ = [
     'StatsApiClient',
     'RemoteActivity',
     'RemoteAppProject',
+    'RemoteUserActivity',
     'delete_lookback_activities',
     'delete_lookback_projects',
+    'delete_lookback_user_activities',
     'upsert_remote_activities',
     'upsert_remote_projects',
+    'upsert_remote_user_activities',
     'get_remote_activities',
     'get_remote_projects',
 ]
