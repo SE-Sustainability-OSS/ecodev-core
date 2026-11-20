@@ -33,6 +33,8 @@ def get_activities(
         granularity: str = HOUR_GRAIN,
         group_by_method: bool = True,
         group_by_application: bool = True,
+        included_applications: tuple[str, ...] | None = None,
+        application_name: str | None = None,
 ) -> PagedResponse[ActivityExport]:
     """
     Returns a page of time-bucketed activity rows, ordered ascending by period_start.
@@ -52,20 +54,25 @@ def get_activities(
     exactly where this page ended without re-fetching any row.  If a single bucket exceeds
     `page_size`, all rows for that bucket are emitted and `next_from_date` is set to
     `bucket_start + one_period` to guarantee forward progress.
+
+    NOTE: `included_applications` limits the query to those labels before the counts are
+    built. With `application_name`, every matching label is emitted as that one name, so
+    distinct users are not split across historical spellings.
     """
     period = func.date_trunc(granularity, col(AppActivity.created_at))
     application_col = func.coalesce(col(AppActivity.application), '')
     method_col = func.coalesce(col(AppActivity.method), '')
-
+    split_application = group_by_application and application_name is None
     group_cols = [period]
-    if group_by_application:
+    if split_application:
         group_cols.append(application_col)
     if group_by_method:
         group_cols.append(method_col)
 
     stmt = (
         select(
-            (application_col if group_by_application else literal('')).label('application'),
+            (application_col if split_application else literal(application_name or '')).label(
+                'application'),
             period.label('period_start'),
             (method_col if group_by_method else literal('')).label('method'),
             func.count().label('activity_count'),
@@ -74,6 +81,8 @@ def get_activities(
         .group_by(*group_cols)
         .order_by(period)
     )
+    if (scope := _application_scope(application_col, included_applications)) is not None:
+        stmt = stmt.where(scope)
 
     if from_date is not None:
         stmt = stmt.where(
@@ -97,6 +106,8 @@ def get_user_activities(
         from_date: datetime | None = None,
         to_date: datetime | None = None,
         page_size: int = DEFAULT_PAGE_SIZE,
+        included_applications: tuple[str, ...] | None = None,
+        application_name: str | None = None,
 ) -> PagedResponse[UserActivityExport]:
     """
     Returns a page of one row per (UTC day, application, person), ordered by day.
@@ -104,20 +115,30 @@ def get_user_activities(
     The consumer counts distinct `user_key` values over any window and any set of apps,
     so a person active on several days or in several apps is counted once.
     Paging follows the same `next_from_date` cursor as `get_activities`.
+
+    NOTE: With `application_name`, labels in `included_applications` collapse to one
+    row per person and day, and the count covers only those labels.
     """
     period = func.date_trunc(DAY_GRAIN, col(AppActivity.created_at))
     application_col = func.coalesce(col(AppActivity.application), '')
+    split_application = application_name is None
+    group_cols = [period, col(AppActivity.user)]
+    if split_application:
+        group_cols.append(application_col)
     stmt = (
         select(
-            application_col.label('application'),
+            (application_col if split_application else literal(application_name)).label(
+                'application'),
             period.label('period_start'),
             col(AppActivity.user).label('user'),
             func.count().label('activity_count'),
         )
         .where(col(AppActivity.user).is_not(None))
-        .group_by(period, application_col, col(AppActivity.user))
+        .group_by(*group_cols)
         .order_by(period)
     )
+    if (scope := _application_scope(application_col, included_applications)) is not None:
+        stmt = stmt.where(scope)
     if from_date is not None:
         stmt = stmt.where(period >= _normalize_utc(from_date))
     if to_date is not None:
@@ -127,9 +148,31 @@ def get_user_activities(
     return _paged(rows, page_size, DAY_GRAIN, _to_user_export)
 
 
+def _application_scope(application_col, included_applications: tuple[str, ...] | None):
+    """
+    SQL restriction to the application labels this producer owns.
+
+    None leaves every label in the table. Matching ignores case and surrounding
+    space, so historical spellings of one app stay in that app's stream.
+    """
+    if not included_applications:
+        return None
+    owned = tuple(sorted({
+        label.strip().casefold()
+        for label in included_applications
+        if label and label.strip()
+    }))
+    if not owned:
+        return None
+    return func.lower(application_col).in_(owned)
+
+
 def user_key(user: str) -> str:
     """
     Pseudonymous key shared by every app for the same login.
+
+    SHA-256 of the trimmed, lower-cased login. The same login is the same key in
+    every app, and the login itself never crosses the wire.
     """
     return hashlib.sha256(user.strip().lower().encode()).hexdigest()
 
@@ -138,7 +181,7 @@ def _rows_for_page(session: Session, statement, period, page_size: int) -> list:
     """
     One page of period-ordered rows, with a split bucket completed.
 
-    NOTE: The first read stops at page_size plus one. When that extra row is still
+    The first read stops at page_size plus one. When that extra row is still
     inside the last bucket, a second read loads the whole bucket so none of its
     rows are dropped when the cursor moves on.
     """
@@ -185,10 +228,12 @@ def _to_user_export(r) -> UserActivityExport:
     """
     Converts one grouped row to a UserActivityExport, hashing the login.
     """
+    period_start = _export_period(r.period_start)
+    person_key = user_key(r.user)
     return UserActivityExport(
-        user_key=user_key(r.user),
+        user_key=person_key,
         application=r.application,
-        period_start=as_utc(r.period_start),
+        period_start=period_start,
         activity_count=r.activity_count,
     )
 
@@ -199,7 +244,7 @@ def _to_export(r, granularity: str) -> ActivityExport:
     """
     return ActivityExport(
         application=r.application,
-        period_start=as_utc(r.period_start),
+        period_start=_export_period(r.period_start),
         granularity=granularity,
         method=r.method,
         activity_count=r.activity_count,
@@ -217,6 +262,16 @@ def _next_period_start(period_start: datetime, granularity: str) -> datetime:
     if granularity == DAY_GRAIN:
         return period_start + timedelta(days=1)
     return period_start + timedelta(hours=1)
+
+
+def _export_period(period_start: datetime) -> datetime:
+    """
+    Converts a required database bucket timestamp to timezone-aware UTC.
+    """
+    value = as_utc(period_start)
+    if value is None:
+        raise ValueError('Export period_start cannot be null')
+    return value
 
 
 def _normalize_utc(dt: datetime) -> datetime:

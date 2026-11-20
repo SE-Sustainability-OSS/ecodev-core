@@ -4,6 +4,7 @@ Router factory for the /stats producer endpoints.
 /stats/projects is only registered when a ProjectStatsAdapter is supplied.
 """
 from datetime import datetime
+from functools import partial
 from typing import Callable
 
 from fastapi import APIRouter
@@ -29,34 +30,47 @@ def get_stats_router(
         prefix: str = '/stats',
         adapter: ProjectStatsAdapter | None = None,
         dependency: Callable = api_key_auth,
+        included_applications: tuple[str, ...] | None = None,
+        application_name: str | None = None,
 ) -> APIRouter:
     """
     Returns a FastAPI router with stats endpoints.
 
     /activities and /users are always registered. When `adapter` is provided,
-    /projects is also registered via a closure that captures `adapter` so FastAPI
-    sees only the expected query parameters.
+    /projects is registered as well.
+
+    Set `included_applications` and `application_name` together when this process
+    shares its activity table. The endpoints then count only those labels and emit
+    them as `application_name`, one activity stream for this app.
     """
+    owned = _owned_applications(included_applications, application_name)
     router = APIRouter(prefix=prefix, tags=[ACTIVITIES_TAG],
                        dependencies=[Depends(dependency)])
-    router.add_api_route('/activities', _activities_endpoint,
-                         response_model=PagedResponse[ActivityExport], methods=['GET'])
-    router.add_api_route('/users', _users_endpoint,
-                         response_model=PagedResponse[UserActivityExport], methods=['GET'])
+    router.add_api_route(
+        '/activities',
+        partial(_activities_endpoint, owned, application_name),
+        response_model=PagedResponse[ActivityExport],
+        methods=['GET'],
+    )
+    router.add_api_route(
+        '/users',
+        partial(_users_endpoint, owned, application_name),
+        response_model=PagedResponse[UserActivityExport],
+        methods=['GET'],
+    )
     if adapter is not None:
-        def _projects_closure(
-                from_date: datetime | None = Query(default=None),
-                to_date: datetime | None = Query(default=None),
-                session: Session = Depends(get_session),
-        ) -> list[ProjectExport]:
-            return _projects_endpoint(adapter, from_date, to_date, session)
-
-        router.add_api_route('/projects', _projects_closure,
-                             response_model=list[ProjectExport], methods=['GET'])
+        router.add_api_route(
+            '/projects',
+            partial(_projects_endpoint, adapter),
+            response_model=list[ProjectExport],
+            methods=['GET'],
+        )
     return router
 
 
 def _activities_endpoint(
+        included_applications: tuple[str, ...] | None,
+        application_name: str | None,
         from_date: datetime | None = Query(default=None),
         to_date: datetime | None = Query(default=None),
         method: str | None = Query(default=None),
@@ -67,11 +81,12 @@ def _activities_endpoint(
         session: Session = Depends(get_session),
 ) -> PagedResponse[ActivityExport]:
     """
-    Returns a page of time-bucketed activity rows, ordered ascending by period_start.
-    Pass `next_from_date` from the previous response as `from_date` to advance the cursor.
-    Use `granularity=month` for monthly-grain data with pre-aggregated `unique_users`.
-    Pass `group_by_method=false&group_by_application=false` to get one row per period
-    whose `unique_users` is additive across rows.
+    Returns a page of time-bucketed activity rows, ordered by period_start.
+
+    Pass `next_from_date` back as `from_date`. `granularity=month` pre-aggregates
+    `unique_users`. `group_by_method=false` and `group_by_application=false` emit
+    one additive row per period. A configured application name ignores
+    `group_by_application` and keeps that single name.
     """
     return get_activities(
         session=session,
@@ -82,10 +97,14 @@ def _activities_endpoint(
         granularity=granularity,
         group_by_method=group_by_method,
         group_by_application=group_by_application,
+        included_applications=included_applications,
+        application_name=application_name,
     )
 
 
 def _users_endpoint(
+        included_applications: tuple[str, ...] | None,
+        application_name: str | None,
         from_date: datetime | None = Query(default=None),
         to_date: datetime | None = Query(default=None),
         page_size: int = Query(default=500, ge=1, le=5000),
@@ -93,21 +112,45 @@ def _users_endpoint(
 ) -> PagedResponse[UserActivityExport]:
     """
     Returns a page of one row per UTC day, application, and pseudonymous person.
-    Pass `next_from_date` from the previous response as `from_date` to advance the cursor.
+
+    Pass `next_from_date` back as `from_date`. A configured application name
+    collapses the owned labels to one row per person and day.
     """
     return get_user_activities(
         session=session,
         from_date=from_date,
         to_date=to_date,
         page_size=page_size,
+        included_applications=included_applications,
+        application_name=application_name,
     )
+
+
+def _owned_applications(
+        included_applications: tuple[str, ...] | None,
+        application_name: str | None,
+) -> tuple[str, ...] | None:
+    """
+    Validate the shared-table allow-list.
+
+    Both arguments stay unset when the producer owns its activity table. The
+    returned labels are the ones the activity queries keep.
+    """
+    if included_applications is None and application_name is None:
+        return None
+    owned = tuple(
+        label.strip() for label in included_applications or () if label and label.strip()
+    )
+    if not owned or application_name is None or not application_name.strip():
+        raise ValueError('included_applications and application_name must be set together')
+    return owned
 
 
 def _projects_endpoint(
         adapter: ProjectStatsAdapter,
-        from_date: datetime | None,
-        to_date: datetime | None,
-        session: Session,
+        from_date: datetime | None = Query(default=None),
+        to_date: datetime | None = Query(default=None),
+        session: Session = Depends(get_session),
 ) -> list[ProjectExport]:
     """
     Returns all project snapshots from the supplied adapter in a single response.

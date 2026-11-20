@@ -6,6 +6,7 @@ from datetime import datetime
 from http import HTTPStatus
 from typing import Any
 from typing import Generator
+from typing import TypeVar
 from urllib.parse import quote
 
 import requests
@@ -33,6 +34,7 @@ from ecodev_core.rest_api_client import RestApiClient
 # /stats/projects is registered only when a producer supplies a ProjectStatsAdapter,
 # so a 404 there is a valid opt-out rather than a failure.
 ABSENT_ENDPOINT = (HTTPStatus.NOT_FOUND,)
+ExportModel = TypeVar('ExportModel', ActivityExport, UserActivityExport)
 
 
 class StatsApiClient(RestApiClient):
@@ -165,11 +167,11 @@ def _follow_pages(
         from_date: datetime | None,
         to_date: datetime | None,
         granularity: str,
-        model_class: type,
+        model_class: type[ExportModel],
         tolerate: tuple[HTTPStatus, ...],
         group_by_method: bool = True,
         group_by_application: bool = True,
-) -> Generator:
+) -> Generator[ExportModel, None, None]:
     """
     Yields parsed model instances following `next_from_date` cursor until None.
     Stops silently if a response status is one of `tolerate`.
@@ -180,8 +182,9 @@ def _follow_pages(
         raw = _get_json(client, url, tolerate)
         if raw is None:
             return
-        page = PagedResponse[model_class].model_validate(raw)
-        yield from page.items
+        page = PagedResponse[dict].model_validate(raw)
+        for item in page.items:
+            yield model_class.model_validate(item)
         if page.next_from_date is None:
             break
         from_date = page.next_from_date

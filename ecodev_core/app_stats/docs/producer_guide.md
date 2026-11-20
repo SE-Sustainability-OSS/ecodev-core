@@ -46,6 +46,22 @@ app.include_router(get_stats_router())
 `/stats/activities` is now live.  `GET /stats/projects` returns **404** because no adapter
 was supplied.
 
+### Shared activity table
+
+When several apps write one `app_activity` table, pass the labels this app owns and
+the single name the stream should use. Counts are built after that filter, so
+historical spellings stay in this app and other apps' rows stay out.
+
+```python
+app.include_router(get_stats_router(
+    included_applications=('CDP Tool', 'cdp', 'cdp_tool'),
+    application_name='CDP Tool',
+))
+```
+
+Leave both unset when the app has its own database. Project exports are filtered by
+the app that builds the `ProjectStatsAdapter`, not by these two arguments.
+
 ---
 
 ## 3. Wire the router — with projects (cf-tool pattern)

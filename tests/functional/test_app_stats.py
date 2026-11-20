@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlmodel import select
 from sqlmodel import Session
 
 from ecodev_core import ActivityExport
@@ -24,6 +25,7 @@ from ecodev_core import ProjectExport
 from ecodev_core import ProjectStatsAdapter
 from ecodev_core import SafeTestCase
 from ecodev_core import upsert_app_users
+from ecodev_core.app_stats.activity_export import user_key
 from ecodev_core.app_stats.api_key import _configured_api_key
 from ecodev_core.app_stats.constants import HOUR_GRAIN
 from ecodev_core.app_stats.constants import INVALID_KEY_MSG
@@ -31,12 +33,16 @@ from ecodev_core.app_stats.constants import MISSING_AUTH_MSG
 from ecodev_core.app_stats.constants import MONTH_GRAIN
 from ecodev_core.app_stats.consumer.ingest import delete_lookback_activities
 from ecodev_core.app_stats.consumer.ingest import delete_lookback_projects
+from ecodev_core.app_stats.consumer.ingest import delete_lookback_user_activities
 from ecodev_core.app_stats.consumer.ingest import upsert_remote_activities
 from ecodev_core.app_stats.consumer.ingest import upsert_remote_projects
+from ecodev_core.app_stats.consumer.ingest import upsert_remote_user_activities
 from ecodev_core.app_stats.consumer.processing import get_remote_activities
 from ecodev_core.app_stats.consumer.processing import get_remote_projects
 from ecodev_core.app_stats.consumer.tables import RemoteActivity
 from ecodev_core.app_stats.consumer.tables import RemoteAppProject
+from ecodev_core.app_stats.consumer.tables import RemoteUserActivity
+from ecodev_core.app_stats.contract import UserActivityExport
 
 USERS_DIR = Path('/app/tests/unitary/data')
 TEST_API_KEY = 'test-api-key-abc123'
@@ -206,6 +212,13 @@ class AppStatsProducerTest(SafeTestCase):
         self.assertEqual(len(seen), 3)
         self.assertEqual(len(seen), len(set(seen)))
 
+    def test_user_key_is_stable(self):
+        """
+        The same login always maps to one key.
+        """
+        plain = user_key(' Alice@Example.com ')
+        self.assertEqual(plain, user_key('alice@example.com'))
+
     def test_oversized_bucket_still_advances(self):
         """
         When a page_size=1 request lands on a bucket that has more rows than page_size,
@@ -277,11 +290,13 @@ class AppStatsConsumerTest(SafeTestCase):
         super().setUpClass()
         create_db_and_tables(RemoteActivity)
         create_db_and_tables(RemoteAppProject)
+        create_db_and_tables(RemoteUserActivity)
 
     def setUp(self):
         super().setUp()
         delete_table(RemoteActivity)
         delete_table(RemoteAppProject)
+        delete_table(RemoteUserActivity)
 
     def _sample_activities(self) -> list[ActivityExport]:
         return [
@@ -373,6 +388,31 @@ class AppStatsConsumerTest(SafeTestCase):
             count_second = len(get_remote_projects(session, application='cf_tool'))
 
         self.assertEqual(count_first, count_second)
+
+    def test_user_ingest_collapses_and_repeats_cleanly(self):
+        """
+        Producer-local application labels collapse to one person-day, and a rerun stays one row.
+        """
+        moment = datetime(2026, 1, 15, tzinfo=timezone.utc)
+        rows = [
+            UserActivityExport(
+                user_key='person', application='internal-a',
+                period_start=moment, activity_count=2,
+            ),
+            UserActivityExport(
+                user_key='person', application='internal-b',
+                period_start=moment, activity_count=3,
+            ),
+        ]
+        with Session(engine) as session:
+            delete_lookback_user_activities(session, 'CDP tool', moment)
+            upsert_remote_user_activities(session, 'CDP tool', rows)
+            delete_lookback_user_activities(session, 'CDP tool', moment)
+            upsert_remote_user_activities(session, 'CDP tool', rows)
+            stored = session.exec(select(RemoteUserActivity)).all()
+        self.assertEqual(len(stored), 1)
+        self.assertEqual(stored[0].application, 'CDP tool')
+        self.assertEqual(stored[0].activity_count, 5)
 
 
 class AppStatsContractTest(SafeTestCase):
@@ -624,8 +664,9 @@ class AppStatsApiKeyTest(SafeTestCase):
         (open-access mode).
         """
         with patch('ecodev_core.app_stats.api_key._configured_api_key', return_value=None):
-            resp = TestClient(self.app).get('/stats/activities',
-                                           headers={'X-API-Key': 'any-garbage'})
+            resp = TestClient(self.app).get(
+                '/stats/activities', headers={'X-API-Key': 'any-garbage'},
+            )
         self.assertEqual(resp.status_code, 200)
 
     def test_configured_key_rejects_missing_header(self):
@@ -675,14 +716,32 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         Inserts two hour-grain rows (Jan, Feb) and one month-grain row (Jan).
         """
         upsert_remote_activities(session, 'cf_tool', [
-            ActivityExport(application='cf_tool', period_start=datetime(2026, 1, 1, 8, 0, tzinfo=timezone.utc),
-                           granularity=HOUR_GRAIN, method='m', activity_count=1, unique_users=1),
-            ActivityExport(application='cf_tool', period_start=datetime(2026, 2, 1, 9, 0, tzinfo=timezone.utc),
-                           granularity=HOUR_GRAIN, method='m', activity_count=2, unique_users=1),
+            ActivityExport(
+                application='cf_tool',
+                period_start=datetime(2026, 1, 1, 8, 0, tzinfo=timezone.utc),
+                granularity=HOUR_GRAIN,
+                method='m',
+                activity_count=1,
+                unique_users=1,
+            ),
+            ActivityExport(
+                application='cf_tool',
+                period_start=datetime(2026, 2, 1, 9, 0, tzinfo=timezone.utc),
+                granularity=HOUR_GRAIN,
+                method='m',
+                activity_count=2,
+                unique_users=1,
+            ),
         ], granularity=HOUR_GRAIN)
         upsert_remote_activities(session, 'cf_tool', [
-            ActivityExport(application='cf_tool', period_start=datetime(2026, 1, 1, 0, 0, tzinfo=timezone.utc),
-                           granularity=MONTH_GRAIN, method='m', activity_count=3, unique_users=2),
+            ActivityExport(
+                application='cf_tool',
+                period_start=datetime(2026, 1, 1, 0, 0, tzinfo=timezone.utc),
+                granularity=MONTH_GRAIN,
+                method='m',
+                activity_count=3,
+                unique_users=2,
+            ),
         ], granularity=MONTH_GRAIN)
 
     def test_delete_lookback_leaves_month_rows_intact(self):
@@ -691,8 +750,10 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         """
         with Session(engine) as session:
             self._seed(session)
-            delete_lookback_activities(session, 'cf_tool', datetime(2026, 1, 1, tzinfo=timezone.utc),
-                                       granularity=HOUR_GRAIN)
+            delete_lookback_activities(
+                session, 'cf_tool', datetime(2026, 1, 1, tzinfo=timezone.utc),
+                granularity=HOUR_GRAIN,
+            )
             hour_rows = get_remote_activities(session, application='cf_tool',
                                               granularity=HOUR_GRAIN)
             month_rows = get_remote_activities(session, application='cf_tool',
@@ -707,8 +768,10 @@ class AppStatsConsumerScopeTest(SafeTestCase):
         """
         with Session(engine) as session:
             self._seed(session)
-            delete_lookback_activities(session, 'cf_tool', datetime(2026, 2, 1, tzinfo=timezone.utc),
-                                       granularity=HOUR_GRAIN)
+            delete_lookback_activities(
+                session, 'cf_tool', datetime(2026, 2, 1, tzinfo=timezone.utc),
+                granularity=HOUR_GRAIN,
+            )
             rows = get_remote_activities(session, application='cf_tool', granularity=HOUR_GRAIN)
 
         self.assertEqual(len(rows), 1)

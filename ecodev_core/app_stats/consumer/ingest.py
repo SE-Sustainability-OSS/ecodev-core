@@ -111,17 +111,27 @@ def upsert_remote_user_activities(
     Inserts remote per-person day rows. Call after `delete_lookback_user_activities`.
 
     The registry name is stored as `application`, matching RemoteActivity rows.
+    Rows split by a producer's internal application labels are combined because
+    those labels collapse to the same registry application.
     """
+    activity_counts: dict[tuple[datetime, str], int] = {}
+    for item in rows:
+        period_start = as_utc(item.period_start)
+        if period_start is None:
+            raise ValueError('User activity period_start cannot be null')
+        key = (period_start, item.user_key)
+        activity_counts[key] = activity_counts.get(key, 0) + item.activity_count
+
     ingested_at = utc_now()
     session.add_all([
         RemoteUserActivity(
             application=application,
-            period_start=as_utc(item.period_start),
-            user_key=item.user_key,
-            activity_count=item.activity_count,
+            period_start=period_start,
+            user_key=user_key,
+            activity_count=activity_count,
             ingested_at=ingested_at,
         )
-        for item in rows
+        for (period_start, user_key), activity_count in activity_counts.items()
     ])
     session.commit()
 
