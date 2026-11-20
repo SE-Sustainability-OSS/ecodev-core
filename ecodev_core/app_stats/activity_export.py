@@ -5,9 +5,7 @@ import hashlib
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
-from typing import Any
 from typing import Callable
-from typing import cast
 
 from sqlalchemy import literal
 from sqlmodel import col
@@ -65,8 +63,6 @@ def get_activities(
     application_col = func.coalesce(col(AppActivity.application), '')
     method_col = func.coalesce(col(AppActivity.method), '')
     split_application = group_by_application and application_name is None
-    shown_application = application_col if split_application else literal(application_name or '')
-
     group_cols = [period]
     if split_application:
         group_cols.append(application_col)
@@ -74,8 +70,9 @@ def get_activities(
         group_cols.append(method_col)
 
     stmt = (
-        cast(Any, select)(
-            shown_application.label('application'),
+        select(
+            (application_col if split_application else literal(application_name or '')).label(
+                'application'),
             period.label('period_start'),
             (method_col if group_by_method else literal('')).label('method'),
             func.count().label('activity_count'),
@@ -125,13 +122,13 @@ def get_user_activities(
     period = func.date_trunc(DAY_GRAIN, col(AppActivity.created_at))
     application_col = func.coalesce(col(AppActivity.application), '')
     split_application = application_name is None
-    shown_application = application_col if split_application else literal(application_name)
     group_cols = [period, col(AppActivity.user)]
     if split_application:
         group_cols.append(application_col)
     stmt = (
-        cast(Any, select)(
-            shown_application.label('application'),
+        select(
+            (application_col if split_application else literal(application_name)).label(
+                'application'),
             period.label('period_start'),
             col(AppActivity.user).label('user'),
             func.count().label('activity_count'),

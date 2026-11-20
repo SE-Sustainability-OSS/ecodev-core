@@ -7,7 +7,6 @@ from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Field
-from sqlmodel import Index
 from sqlmodel import SQLModel
 
 from ecodev_core.date_utils import utc_now
@@ -42,15 +41,6 @@ class RemoteUserActivity(SQLModel, table=True):  # type: ignore
     any window and any set of applications gives a true people count.
     """
     __tablename__ = 'remote_user_activity'
-    __table_args__ = (
-        Index(
-            'uq_remote_user_activity_person_day',
-            'application',
-            'period_start',
-            'user_key',
-            unique=True,
-        ),
-    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     application: str = Field(index=True)
