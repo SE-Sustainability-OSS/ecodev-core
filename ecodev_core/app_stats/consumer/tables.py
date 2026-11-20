@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Field
+from sqlmodel import Index
 from sqlmodel import SQLModel
 
 from ecodev_core.date_utils import utc_now
@@ -39,8 +40,21 @@ class RemoteUserActivity(SQLModel, table=True):  # type: ignore
 
     Keyed on (application, period_start, user_key). Counting distinct `user_key` over
     any window and any set of applications gives a true people count.
+
+    NOTE: The unique index keeps a single row for one person on one day. Ingest
+    deletes that window and inserts again, so a second insert that misses the
+    delete would otherwise store the same activity twice.
     """
     __tablename__ = 'remote_user_activity'
+    __table_args__ = (
+        Index(
+            'uq_remote_user_activity_person_day',
+            'application',
+            'period_start',
+            'user_key',
+            unique=True,
+        ),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     application: str = Field(index=True)
